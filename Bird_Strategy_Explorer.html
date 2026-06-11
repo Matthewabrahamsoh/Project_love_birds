@@ -1,0 +1,2533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bird Strategy Explorer — A Contemplation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;700&family=Nunito:ital,wght@0,400;0,600;0,700;1,400&family=Lora:ital,wght@0,500;1,400&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --deep:#051823; --deep2:#071f30; --steel:#4a7fa5; --copper:#c87941;
+  --gold:#e8b84b; --gold2:#f5d780; --sb:#f6c90e;
+  --foam:#d6eef8; --muted:rgba(214,238,248,0.45); --muted2:rgba(214,238,248,0.65);
+  --card-bg:#0d2d42; --card-border:rgba(74,127,165,0.3);
+  --shadow:0 8px 32px rgba(2,8,13,0.5);
+}
+html,body{width:100%;min-height:100vh;font-family:'Nunito',sans-serif;overflow-x:hidden;
+  background:radial-gradient(ellipse 80% 50% at 50% 0%,#0a3a55 0%,transparent 70%),
+  linear-gradient(180deg,#020c13 0%,#051823 40%,#071f30 100%);
+  color:var(--foam);}
+
+/* ═══ BACKGROUND AMBIENCE ═══ */
+.bg-bubbles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.bg-bubble{position:absolute;bottom:-60px;border-radius:50%;
+  border:1px solid rgba(214,238,248,0.08);
+  background:radial-gradient(circle at 35% 30%,rgba(214,238,248,0.04) 0%,transparent 70%);
+  animation:rise linear infinite;}
+@keyframes rise{0%{transform:translateY(0);opacity:0;}10%{opacity:.6;}90%{opacity:.15;}100%{transform:translateY(-110vh) translateX(20px);opacity:0;}}
+
+/* ═══ HEADER ═══ */
+header{position:relative;z-index:2;text-align:center;padding:48px 24px 20px;}
+.verse-tag{display:inline-flex;align-items:center;gap:10px;font-family:'Cinzel',serif;
+  font-size:9px;letter-spacing:3.5px;color:var(--sb);opacity:.8;margin-bottom:14px;text-transform:uppercase;}
+.verse-tag::before,.verse-tag::after{content:'';width:28px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--sb),transparent);}
+header h1{font-family:'Cinzel',serif;font-size:clamp(1.8rem,5.5vw,3.4rem);font-weight:700;
+  color:var(--foam);line-height:1.15;margin-bottom:8px;text-shadow:0 2px 20px rgba(13,79,110,.8);}
+header .subtitle{font-family:'Lora',serif;font-style:italic;font-size:clamp(.85rem,2.2vw,1.1rem);
+  color:var(--sb);opacity:.85;margin-bottom:10px;}
+header p.tagline{font-size:.85rem;color:var(--muted2);max-width:480px;margin:0 auto 4px;line-height:1.7;}
+header p.byline{font-family:'Lora',serif;font-style:italic;font-size:.8rem;color:var(--muted);margin-top:14px;}
+.iron-divider{display:flex;align-items:center;justify-content:center;gap:12px;margin:20px auto;max-width:300px;}
+.iron-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--steel),transparent);}
+.iron-icon{font-size:1rem;filter:drop-shadow(0 0 5px rgba(74,127,165,.6));}
+
+/* ═══ NAV TABS ═══ */
+.mode-nav{position:relative;z-index:5;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;
+  padding:0 16px 24px;max-width:1100px;margin:0 auto;}
+.mode-tab{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:1.5px;text-transform:uppercase;
+  font-weight:500;color:var(--muted2);background:rgba(13,45,66,0.5);
+  border:1px solid var(--card-border);border-radius:30px;padding:10px 18px;
+  cursor:pointer;transition:all .25s;white-space:nowrap;}
+.mode-tab:hover{border-color:var(--sb);color:var(--sb);}
+.mode-tab.active{background:linear-gradient(135deg,var(--copper),var(--sb));
+  color:var(--deep);border-color:transparent;box-shadow:0 4px 16px rgba(246,201,14,.3);}
+
+/* ═══ MAIN CONTAINER ═══ */
+main{position:relative;z-index:2;max-width:1200px;margin:0 auto;padding:0 16px 80px;}
+.mode-panel{display:none;animation:fadeIn .5s ease;}
+.mode-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+/* ═══ INTRO TEXT BLOCKS ═══ */
+.mode-intro{background:rgba(13,45,66,0.4);border:1px solid var(--card-border);
+  border-radius:16px;padding:20px 24px;margin-bottom:24px;}
+.mode-intro h2{font-family:'Cinzel',serif;font-size:1.2rem;color:var(--gold2);margin-bottom:8px;letter-spacing:1px;}
+.mode-intro p{font-size:.9rem;color:var(--muted2);line-height:1.7;}
+.mode-intro p.question{font-family:'Lora',serif;font-style:italic;color:var(--sb);margin-top:10px;font-size:.95rem;}
+
+/* ═══ CONTROL PANEL ═══ */
+.controls-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;align-items:center;}
+.control-group{display:flex;flex-direction:column;gap:4px;}
+.control-group label{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted);}
+select,.btn{background:rgba(5,24,35,.85);border:1px solid var(--card-border);
+  color:var(--foam);border-radius:8px;padding:9px 14px;font-family:'Nunito',sans-serif;
+  font-size:.85rem;cursor:pointer;outline:none;transition:border-color .2s;}
+select:focus,.btn:hover{border-color:var(--sb);}
+.btn{font-weight:700;background:rgba(246,201,14,.12);border-color:rgba(246,201,14,.35);color:var(--sb);}
+.btn.active{background:linear-gradient(135deg,var(--copper),var(--sb));color:var(--deep);}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;}
+.chip{font-size:.78rem;padding:6px 14px;border-radius:20px;cursor:pointer;
+  background:rgba(13,45,66,.6);border:1px solid var(--card-border);color:var(--muted2);
+  transition:all .2s;}
+.chip:hover{border-color:var(--sb);}
+.chip.active{background:rgba(246,201,14,.18);border-color:var(--sb);color:var(--sb);}
+
+/* ═══ CANVAS / PLOT AREA ═══ */
+.plot-wrap{background:rgba(5,24,35,.5);border:1px solid var(--card-border);
+  border-radius:16px;padding:16px;margin-bottom:20px;}
+canvas{width:100%;display:block;cursor:crosshair;border-radius:8px;}
+.plot-caption{font-size:.78rem;color:var(--muted);text-align:center;margin-top:8px;font-style:italic;}
+
+/* ═══ BIRD DETAIL CARD ═══ */
+.detail-card{background:linear-gradient(160deg,var(--card-bg),#071b28);
+  border:1px solid var(--card-border);border-radius:18px;padding:24px;
+  box-shadow:var(--shadow);display:none;}
+.detail-card.show{display:block;animation:fadeIn .4s ease;}
+.detail-head{display:flex;justify-content:space-between;align-items:flex-start;
+  flex-wrap:wrap;gap:12px;margin-bottom:14px;border-bottom:1px solid var(--card-border);
+  padding-bottom:14px;}
+.detail-head h3{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--gold2);}
+.detail-head .sci{font-style:italic;color:var(--muted2);font-size:.85rem;margin-top:2px;}
+.detail-family-badge{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:1.5px;
+  text-transform:uppercase;padding:5px 12px;border-radius:20px;font-weight:700;}
+.detail-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
+  gap:10px;margin-bottom:16px;}
+.stat-box{background:rgba(5,24,35,.6);border-radius:10px;padding:10px 12px;text-align:center;}
+.stat-box .val{font-family:'Cinzel',serif;font-size:1.05rem;color:var(--sb);font-weight:700;}
+.stat-box .lbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.detail-philosophy{font-family:'Lora',serif;font-style:italic;font-size:.95rem;
+  line-height:1.85;color:var(--foam);background:rgba(246,201,14,.05);
+  border-left:3px solid var(--sb);padding:16px 20px;border-radius:0 12px 12px 0;}
+.detail-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.tag{font-size:.72rem;padding:4px 12px;border-radius:14px;background:rgba(74,127,165,.2);
+  border:1px solid rgba(74,127,165,.35);color:var(--foam);}
+.tag.iucn-LC{background:rgba(123,198,126,.15);border-color:rgba(123,198,126,.4);color:#7bc67e;}
+.tag.iucn-NT{background:rgba(246,201,14,.15);border-color:rgba(246,201,14,.4);color:var(--sb);}
+.tag.iucn-VU{background:rgba(232,184,75,.15);border-color:rgba(232,184,75,.4);color:var(--gold);}
+.tag.iucn-EN{background:rgba(200,121,65,.18);border-color:rgba(200,121,65,.45);color:var(--copper);}
+.tag.iucn-CR{background:rgba(214,93,93,.18);border-color:rgba(214,93,93,.45);color:#d65d5d;}
+.convergent-row{margin-top:14px;font-size:.82rem;color:var(--muted2);}
+.convergent-row b{color:var(--gold2);}
+.close-detail{background:none;border:1px solid var(--card-border);color:var(--muted2);
+  border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:1rem;flex-shrink:0;}
+.close-detail:hover{border-color:var(--sb);color:var(--sb);}
+
+/* ═══ BIRD GRID (lists/results) ═══ */
+.bird-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
+.bird-chip{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;
+  padding:14px;cursor:pointer;transition:all .2s;}
+.bird-chip:hover{border-color:var(--sb);transform:translateY(-2px);box-shadow:0 6px 20px rgba(2,8,13,.4);}
+.bird-chip .bname{font-family:'Cinzel',serif;font-size:.88rem;color:var(--foam);margin-bottom:4px;}
+.bird-chip .bsci{font-style:italic;font-size:.72rem;color:var(--muted);margin-bottom:8px;}
+.bird-chip .bmeta{font-size:.7rem;color:var(--muted2);}
+.bird-chip .family-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;}
+
+/* ═══ COMPARISON TABLE ═══ */
+.compare-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.compare-table th,.compare-table td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--card-border);}
+.compare-table th{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;
+  color:var(--gold2);}
+.compare-table td.metric-label{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:1px;}
+.compare-table tr:hover td{background:rgba(246,201,14,.04);}
+.compare-empty{text-align:center;padding:40px;color:var(--muted);font-style:italic;}
+.compare-pick-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+
+/* ═══ PHILOSOPHY FEED (random wisdom) ═══ */
+.wisdom-feed{display:flex;flex-direction:column;gap:16px;}
+.wisdom-card{background:linear-gradient(160deg,var(--card-bg),#071b28);
+  border:1px solid var(--card-border);border-radius:16px;padding:20px;cursor:pointer;
+  transition:all .2s;}
+.wisdom-card:hover{border-color:var(--sb);}
+.wisdom-card .wname{font-family:'Cinzel',serif;color:var(--gold2);font-size:1rem;margin-bottom:6px;}
+.wisdom-card .wsci{font-style:italic;color:var(--muted);font-size:.78rem;margin-bottom:10px;}
+.wisdom-card .wtext{font-family:'Lora',serif;font-style:italic;font-size:.9rem;line-height:1.8;color:var(--foam);}
+
+/* ═══ FAMILY CARDS ═══ */
+.family-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.family-card{border-radius:16px;padding:20px;border:1px solid var(--card-border);
+  background:var(--card-bg);cursor:pointer;transition:all .2s;}
+.family-card:hover{transform:translateY(-3px);box-shadow:var(--shadow);}
+.family-card .ficon{font-size:2rem;margin-bottom:8px;}
+.family-card h3{font-family:'Cinzel',serif;color:var(--gold2);margin-bottom:6px;}
+.family-card p{font-size:.82rem;color:var(--muted2);line-height:1.6;margin-bottom:10px;}
+.family-card .fcount{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--sb);}
+
+/* ═══ JOURNAL / NOTES ═══ */
+.journal-section{background:rgba(13,45,66,0.4);border:1px solid var(--card-border);
+  border-radius:16px;padding:20px;margin-top:20px;}
+.journal-section h3{font-family:'Cinzel',serif;color:var(--gold2);margin-bottom:10px;font-size:1rem;}
+.journal-textarea{width:100%;min-height:90px;background:rgba(5,24,35,.85);
+  border:1px solid var(--card-border);color:var(--foam);border-radius:10px;
+  padding:12px;font-family:'Lora',serif;font-size:.88rem;resize:vertical;outline:none;}
+.journal-textarea:focus{border-color:var(--sb);}
+.fav-star{cursor:pointer;font-size:1.3rem;color:var(--muted);transition:all .2s;background:none;border:none;}
+.fav-star.active{color:var(--sb);transform:scale(1.15);}
+
+/* ═══ ADMIN / BACKUP TOGGLE ═══ */
+.admin-toggle{position:fixed;bottom:24px;right:24px;z-index:100;width:52px;height:52px;
+  border-radius:50%;background:linear-gradient(135deg,var(--copper),var(--sb));
+  color:var(--deep);border:none;font-size:1.3rem;cursor:pointer;
+  box-shadow:0 4px 20px rgba(246,201,14,.4);transition:transform .2s;}
+.admin-toggle:hover{transform:scale(1.1);}
+.admin-panel{position:fixed;bottom:88px;right:16px;z-index:100;
+  background:linear-gradient(160deg,#0d2d42,#071b28);
+  border:1px solid rgba(74,127,165,.35);border-radius:16px;padding:20px;
+  width:min(320px,calc(100vw - 32px));
+  box-shadow:0 20px 50px rgba(2,8,13,.9);
+  opacity:0;pointer-events:none;transform:translateY(10px);
+  transition:opacity .25s,transform .25s;max-height:80vh;overflow-y:auto;}
+.admin-panel.open{opacity:1;pointer-events:auto;transform:translateY(0);}
+.admin-panel h3{font-family:'Cinzel',serif;font-size:.95rem;color:var(--sb);margin-bottom:12px;letter-spacing:1px;}
+.admin-panel p{font-size:.8rem;color:var(--muted2);margin-bottom:12px;line-height:1.6;}
+.import-area{border:2px dashed rgba(74,127,165,.5);border-radius:8px;padding:14px;
+  text-align:center;cursor:pointer;font-size:.82rem;color:var(--muted2);margin-top:10px;}
+.import-area:hover{border-color:var(--sb);}
+
+/* ═══ FOOTER ═══ */
+footer{text-align:center;padding:40px 20px 50px;position:relative;z-index:2;}
+footer .credit{font-family:'Lora',serif;font-style:italic;font-size:.95rem;color:var(--muted2);}
+footer .made-with{font-size:.78rem;color:var(--sb);margin-top:6px;font-weight:700;letter-spacing:.5px;}
+footer .verse-end{font-family:'Cinzel',serif;font-size:.7rem;letter-spacing:2px;color:var(--muted);
+  margin-top:16px;text-transform:uppercase;}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:600px){
+  .mode-tab{font-size:.62rem;padding:8px 12px;}
+  .detail-stats{grid-template-columns:repeat(2,1fr);}
+  .bird-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-bubbles" id="bg-bubbles"></div>
+
+<header>
+  <div class="verse-tag"><span>A field journal in data</span></div>
+  <h1>Bird Strategy Explorer</h1>
+  <p class="subtitle">"Consider the birds of the air..."</p>
+  <p class="tagline">100 species. Seven families. No photographs — just the strange, elegant
+    solutions evolution has found to the same handful of problems: how to fly, how to eat,
+    how to survive winter, how to be noticed, how to grow old.</p>
+  <div class="iron-divider"><div class="iron-line"></div><span class="iron-icon">🪶</span><div class="iron-line"></div></div>
+  <p class="byline">A love project, for wisdom — Matthew Abraham</p>
+</header>
+
+<nav class="mode-nav" id="mode-nav">
+  <button class="mode-tab active" data-mode="wisdom">🪶 Wisdom Feed</button>
+  <button class="mode-tab" data-mode="morphospace">📐 Morphospace</button>
+  <button class="mode-tab" data-mode="lifehistory">⏳ Life History</button>
+  <button class="mode-tab" data-mode="anatomy">🔬 Diet & Anatomy</button>
+  <button class="mode-tab" data-mode="geography">🌍 Geography</button>
+  <button class="mode-tab" data-mode="conservation">🛡️ Conservation</button>
+  <button class="mode-tab" data-mode="compare">⚖️ Compare</button>
+  <button class="mode-tab" data-mode="families">🌳 Families</button>
+</nav>
+
+<main>
+
+  <!-- DETAIL CARD (shared, shown across modes) -->
+  <div class="detail-card" id="detail-card"></div>
+
+  <!-- ═══ WISDOM FEED ═══ -->
+  <div class="mode-panel active" id="mode-wisdom">
+    <div class="mode-intro">
+      <h2>Wisdom Feed</h2>
+      <p>Every species here carries a small story — a strange fact, an evolutionary trade-off,
+         a quiet piece of philosophy hidden in anatomy or behavior. Scroll, or shuffle, and let
+         curiosity lead.</p>
+      <p class="question">No goal. No score. Just looking closely at what already exists.</p>
+    </div>
+    <div class="controls-row">
+      <button class="btn" id="shuffle-btn">🔀 Shuffle</button>
+      <div class="chip-row" id="wisdom-family-filter"></div>
+    </div>
+    <div class="wisdom-feed" id="wisdom-feed"></div>
+  </div>
+
+  <!-- ═══ MORPHOSPACE ═══ -->
+  <div class="mode-panel" id="mode-morphospace">
+    <div class="mode-intro">
+      <h2>Morphospace Explorer</h2>
+      <p>Plot any two physical traits against each other. Clusters reveal <b>adaptive
+         radiations</b> — groups of species that converged on similar solutions. Outliers
+         reveal extremes: the smallest, the longest, the most extreme.</p>
+      <p class="question">What shapes has evolution discovered — and which remain empty?</p>
+    </div>
+    <div class="controls-row">
+      <div class="control-group">
+        <label>X Axis</label>
+        <select id="morph-x"></select>
+      </div>
+      <div class="control-group">
+        <label>Y Axis</label>
+        <select id="morph-y"></select>
+      </div>
+      <div class="control-group">
+        <label>Color By</label>
+        <select id="morph-color">
+          <option value="family">Family</option>
+          <option value="diet">Diet</option>
+          <option value="migration">Migration</option>
+          <option value="iucn_status">Conservation Status</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Scale</label>
+        <select id="morph-scale">
+          <option value="log">Logarithmic</option>
+          <option value="linear">Linear</option>
+        </select>
+      </div>
+    </div>
+    <div class="plot-wrap">
+      <canvas id="morph-canvas" height="500"></canvas>
+      <p class="plot-caption">Click any point to read its story. Hover to preview.</p>
+    </div>
+    <div id="morph-legend" class="chip-row"></div>
+  </div>
+
+  <!-- ═══ LIFE HISTORY ═══ -->
+  <div class="mode-panel" id="mode-lifehistory">
+    <div class="mode-intro">
+      <h2>Life History Strategy Space</h2>
+      <p>Every species solves the same equation differently: <b>live fast, reproduce often,
+         die young</b> — or <b>live slow, reproduce rarely, invest heavily</b>. This is the
+         r/K continuum, one of ecology's deepest organizing ideas.</p>
+      <p class="question">Why does an albatross live 60 years and lay one egg every two years,
+         while a sparrow lives 3 years and lays a dozen?</p>
+    </div>
+    <div class="controls-row">
+      <div class="control-group">
+        <label>Compare</label>
+        <select id="lh-y">
+          <option value="clutch_size">Clutch Size</option>
+          <option value="eggs_per_year">Eggs per Year</option>
+          <option value="incubation_days">Incubation Days</option>
+          <option value="heart_rate_bpm">Heart Rate (bpm)</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Filter Family</label>
+        <select id="lh-family"></select>
+      </div>
+    </div>
+    <div class="plot-wrap">
+      <canvas id="lh-canvas" height="500"></canvas>
+      <p class="plot-caption">X axis: Lifespan (years, log scale). Each point is a species.</p>
+    </div>
+    <div class="mode-intro">
+      <p><b style="color:var(--gold2)">r-strategists</b> (bottom-left): short-lived, many
+         offspring — House Sparrow, Common Cuckoo, Zebra Finch.</p>
+      <p style="margin-top:8px;"><b style="color:var(--gold2)">K-strategists</b> (top-right):
+         long-lived, few offspring — Albatrosses, Kakapo, large raptors.</p>
+    </div>
+  </div>
+
+  <!-- ═══ DIET & ANATOMY ═══ -->
+  <div class="mode-panel" id="mode-anatomy">
+    <div class="mode-intro">
+      <h2>Diet & Anatomy: Form Follows Function</h2>
+      <p>Beak shape is rarely arbitrary — it's a direct readout of diet. Plot beak length
+         against curvature, colored by diet, and watch unrelated species cluster by
+         <b>what they eat</b>, not who they're related to.</p>
+      <p class="question">Why do hummingbirds, sunbirds, and lorikeets — separated by 60+
+         million years of evolution — all end up with similar beaks?</p>
+    </div>
+    <div class="controls-row">
+      <div class="chip-row" id="diet-filter"></div>
+    </div>
+    <div class="plot-wrap">
+      <canvas id="anatomy-canvas" height="500"></canvas>
+      <p class="plot-caption">X: Beak Length (mm, log) · Y: Beak Curvature (0=straight, 5=strongly hooked/curved)</p>
+    </div>
+    <div id="convergence-callout" class="mode-intro" style="display:none;"></div>
+  </div>
+
+  <!-- ═══ GEOGRAPHY ═══ -->
+  <div class="mode-panel" id="mode-geography">
+    <div class="mode-intro">
+      <h2>Geographic Mysteries</h2>
+      <p>Where a species lives is shaped by climate, competition, and history as much as
+         by what it could theoretically tolerate. Filter by region and altitude to find
+         patterns — and absences.</p>
+      <p class="question">Why are there no hummingbirds outside the Americas? Why no
+         woodpeckers in Australia? Geography remembers continental drift.</p>
+    </div>
+    <div class="controls-row">
+      <div class="control-group">
+        <label>Region</label>
+        <select id="geo-region"></select>
+      </div>
+      <div class="control-group">
+        <label>Min Altitude (m)</label>
+        <select id="geo-alt-min">
+          <option value="0">Sea level+</option>
+          <option value="1000">1,000m+</option>
+          <option value="2000">2,000m+</option>
+          <option value="3000">3,000m+</option>
+          <option value="4000">4,000m+</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Migration</label>
+        <select id="geo-migration">
+          <option value="all">All</option>
+          <option value="resident">Resident</option>
+          <option value="partial">Partial Migrant</option>
+          <option value="long_distance">Long-distance Migrant</option>
+        </select>
+      </div>
+    </div>
+    <div id="geo-results" class="bird-grid"></div>
+    <div class="mode-intro" id="geo-summary"></div>
+  </div>
+
+  <!-- ═══ CONSERVATION ═══ -->
+  <div class="mode-panel" id="mode-conservation">
+    <div class="mode-intro">
+      <h2>Conservation: The Web of Dependencies</h2>
+      <p>IUCN status is a snapshot, not a sentence — but the threats behind each status
+         tell a deeper story. Many declines trace back to a handful of root causes,
+         repeated across unrelated species worldwide.</p>
+      <p class="question">If one habitat disappears, how many separate evolutionary
+         stories disappear with it?</p>
+    </div>
+    <div class="controls-row">
+      <div class="chip-row" id="iucn-filter"></div>
+    </div>
+    <div class="plot-wrap">
+      <canvas id="conservation-canvas" height="320"></canvas>
+    </div>
+    <div id="threat-groups"></div>
+  </div>
+
+  <!-- ═══ COMPARE ═══ -->
+  <div class="mode-panel" id="mode-compare">
+    <div class="mode-intro">
+      <h2>Side by Side</h2>
+      <p>Pick two or three species — related or wildly different — and compare them
+         trait by trait. Sometimes the most interesting comparisons are between species
+         that share nothing but a single solved problem.</p>
+      <p class="question">Try: Bee Hummingbird vs Wandering Albatross. Or: Peregrine
+         Falcon vs Andean Condor — both raptors, opposite strategies entirely.</p>
+    </div>
+    <div class="compare-pick-row">
+      <select id="compare-1"><option value="">— Species A —</option></select>
+      <select id="compare-2"><option value="">— Species B —</option></select>
+      <select id="compare-3"><option value="">— Species C (optional) —</option></select>
+      <button class="btn" id="compare-random">🎲 Random Pair</button>
+    </div>
+    <div id="compare-output"></div>
+  </div>
+
+  <!-- ═══ FAMILIES ═══ -->
+  <div class="mode-panel" id="mode-families">
+    <div class="mode-intro">
+      <h2>Seven Families, One Tree</h2>
+      <p>These 100 species belong to seven broad groups, each representing a different
+         evolutionary "experiment" — a different answer to the question of how to be
+         a bird. Click a family to see all its members.</p>
+    </div>
+    <div class="family-grid" id="family-grid"></div>
+    <div id="family-members" class="bird-grid" style="margin-top:20px;"></div>
+  </div>
+
+  <!-- JOURNAL (favorites/notes) -->
+  <div class="journal-section" id="journal-section" style="display:none;">
+    <h3>📖 My Field Notes</h3>
+    <div id="journal-list"></div>
+  </div>
+
+</main>
+
+<!-- ADMIN / BACKUP -->
+<button class="admin-toggle" onclick="toggleAdmin()">📖</button>
+<div class="admin-panel" id="admin-panel">
+  <h3>📖 MY FIELD JOURNAL</h3>
+  <p>Star any species while exploring to save it here with your own notes.
+     Your journal is yours alone — export it to keep or share.</p>
+  <button class="btn" style="width:100%;margin-bottom:8px;" onclick="exportJournal()">⬇️ Export Journal</button>
+  <div class="import-area" id="import-journal-area">📂 Import journal file</div>
+  <input type="file" id="import-journal-input" accept=".json" style="display:none;">
+  <div id="journal-status" style="font-size:.78rem;color:var(--sb);margin-top:8px;text-align:center;"></div>
+  <div id="journal-mini-list" style="margin-top:14px;"></div>
+</div>
+
+<footer>
+  <p class="credit">"Look at the birds of the air; they neither sow nor reap..."</p>
+  <p class="made-with">Made with Love 💛 — Matthew Abraham</p>
+  <p class="verse-end">Iron sharpens iron · One feather at a time</p>
+</footer>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   BIRD STRATEGY EXPLORER — DATASET
+   100 species · 7 families · A contemplation on evolutionary solutions
+   Compiled by Matthew Abraham
+   ════════════════════════════════════════════════════════════ */
+
+const BIRDS_DATA = [
+
+/* ═══════════ HUMMINGBIRDS (15) — Trochilidae ═══════════
+   The fastest metabolisms on Earth. Living proof that
+   small size unlocks strategies impossible at scale. */
+
+{id:1,name:"Ruby-throated Hummingbird",scientific:"Archilochus colubris",family:"Hummingbirds",
+ mass_g:3.4,wingspan_cm:11,beak_length_mm:19,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"nectarivore",habitat:["forest-edge","gardens","meadows"],region:["North America","Central America"],
+ altitude_min:0,altitude_max:2500,migration:"long_distance",
+ lifespan_years:9,clutch_size:2,eggs_per_year:2,incubation_days:14,
+ heart_rate_bpm:500,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_loss","window_collisions"],
+ convergent_with:["Crimson Sunbird","Golden-winged Sunbird"],
+ philosophy:"This bird crosses 800km of open Gulf of Mexico without landing — on a body lighter than a coin. Its heart beats eight times per second in flight, then drops to one beat every two seconds in nightly torpor. Two extremes of the same small machine."},
+
+{id:2,name:"Sword-billed Hummingbird",scientific:"Ensifera ensifera",family:"Hummingbirds",
+ mass_g:12,wingspan_cm:18,beak_length_mm:101,beak_curvature:0,beak_type:"straight-extreme",
+ diet:"nectarivore",habitat:["cloud-forest","montane"],region:["South America"],
+ altitude_min:1700,altitude_max:3500,migration:"resident",
+ lifespan_years:8,clutch_size:2,eggs_per_year:2,incubation_days:18,
+ heart_rate_bpm:420,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"LC",population_trend:"stable",threats:["deforestation"],
+ convergent_with:["Marvelous Spatuletail"],
+ philosophy:"The only bird whose beak is longer than its own body — evolved in lockstep with a single flower, Passiflora mixta, whose corolla is just as absurdly long. Neither species can exist without the other. It must perch nearly vertical just to keep its head upright; preening requires using its feet, not its beak."},
+
+{id:3,name:"Bee Hummingbird",scientific:"Mellisuga helenae",family:"Hummingbirds",
+ mass_g:1.95,wingspan_cm:6,beak_length_mm:10,beak_curvature:0.3,beak_type:"straight-thin",
+ diet:"nectarivore",habitat:["forest","scrub"],region:["Caribbean"],
+ altitude_min:0,altitude_max:1000,migration:"resident",
+ lifespan_years:7,clutch_size:2,eggs_per_year:3,incubation_days:21,
+ heart_rate_bpm:1200,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"NT",population_trend:"decreasing",threats:["habitat_loss","tourism_development"],
+ convergent_with:[],
+ philosophy:"The smallest bird ever to exist — lighter than a US penny, with a heart that can reach 1,200 beats per minute. At this scale, surface-area-to-volume ratio becomes tyrannical: it must eat half its body weight in nectar daily or starve within hours. There may be a hard lower limit to how small a warm-blooded flying animal can be, and this bird sits right at the edge of it."},
+
+{id:4,name:"Giant Hummingbird",scientific:"Patagona gigas",family:"Hummingbirds",
+ mass_g:24,wingspan_cm:21.5,beak_length_mm:40,beak_curvature:0.5,beak_type:"straight-medium",
+ diet:"nectarivore",habitat:["andean-scrub","montane"],region:["South America"],
+ altitude_min:1500,altitude_max:4500,migration:"partial",
+ lifespan_years:10,clutch_size:2,eggs_per_year:2,incubation_days:19,
+ heart_rate_bpm:280,metabolic_rate:"high",torpor:true,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_degradation"],
+ convergent_with:[],
+ philosophy:"Twelve times heavier than a Bee Hummingbird, yet it beats its wings only 10-15 times per second instead of 80. Above the laws of small bodies, its hover becomes inefficient — recent studies show it actually flies in a near-stall, more bird-of-prey than hummingbird in its wingbeat. Size changes the rules entirely."},
+
+{id:5,name:"Anna's Hummingbird",scientific:"Calypte anna",family:"Hummingbirds",
+ mass_g:4.5,wingspan_cm:12,beak_length_mm:18,beak_curvature:0.3,beak_type:"straight-thin",
+ diet:"nectarivore",habitat:["urban","gardens","chaparral"],region:["North America"],
+ altitude_min:0,altitude_max:2000,migration:"resident",
+ lifespan_years:8,clutch_size:2,eggs_per_year:3,incubation_days:16,
+ heart_rate_bpm:480,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"LC",population_trend:"increasing",threats:[],
+ convergent_with:[],
+ philosophy:"One of the few bird species whose range has expanded thanks to humans — eucalyptus trees and exotic garden flowers, planted for beauty, became its year-round food source. During courtship dives it reaches 385 body-lengths per second, the fastest relative speed of any vertebrate — faster, proportionally, than a fighter jet or the space shuttle re-entering."},
+
+{id:6,name:"Sparkling Violetear",scientific:"Colibri coruscans",family:"Hummingbirds",
+ mass_g:8.5,wingspan_cm:15,beak_length_mm:24,beak_curvature:0.8,beak_type:"slightly-curved",
+ diet:"nectarivore",habitat:["montane-forest","gardens"],region:["South America"],
+ altitude_min:1200,altitude_max:3500,migration:"partial",
+ lifespan_years:9,clutch_size:2,eggs_per_year:2,incubation_days:17,
+ heart_rate_bpm:420,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ convergent_with:[],
+ philosophy:"Aggressively territorial despite its small size — it will dive-bomb hawks twice the size of a human fist that wander into its flower patch. Its iridescent ear-patches are not pigment at all but structural color: microscopic platelets that bend light, meaning the bird's color depends entirely on the angle from which you see it. Beauty as physics, not chemistry."},
+
+{id:7,name:"Long-tailed Sylph",scientific:"Aglaiocercus kingii",family:"Hummingbirds",
+ mass_g:5,wingspan_cm:14,beak_length_mm:16,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"nectarivore",habitat:["cloud-forest"],region:["South America"],
+ altitude_min:1700,altitude_max:2800,migration:"resident",
+ lifespan_years:7,clutch_size:2,eggs_per_year:2,incubation_days:16,
+ heart_rate_bpm:450,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"LC",population_trend:"stable",threats:["deforestation"],
+ convergent_with:[],
+ philosophy:"The male's tail streamers can be longer than his entire body — a structure with zero aerodynamic benefit and considerable cost in a hover-feeding lifestyle. This is sexual selection running ahead of natural selection: a visible, costly signal of genetic quality, exactly the kind of 'wasteful beauty' that troubled Darwin himself."},
+
+{id:8,name:"Marvelous Spatuletail",scientific:"Loddigesia mirabilis",family:"Hummingbirds",
+ mass_g:6.4,wingspan_cm:13,beak_length_mm:16,beak_curvature:0.3,beak_type:"straight-thin",
+ diet:"nectarivore",habitat:["scrub","forest-edge"],region:["South America"],
+ altitude_min:2100,altitude_max:2900,migration:"resident",
+ lifespan_years:7,clutch_size:2,eggs_per_year:1,incubation_days:18,
+ heart_rate_bpm:440,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"EN",population_trend:"decreasing",threats:["habitat_loss","tiny_range"],
+ convergent_with:[],
+ philosophy:"Found in a single river valley in Peru, with a global population estimated under 1,000. The male has only four tail feathers — two are bare wires ending in iridescent discs that he swings like pendulums during display. An entire species balanced on the survival of one valley's shrubland."},
+
+{id:9,name:"Rufous Hummingbird",scientific:"Selasphorus rufus",family:"Hummingbirds",
+ mass_g:3.4,wingspan_cm:11,beak_length_mm:17,beak_curvature:0.3,beak_type:"straight-thin",
+ diet:"nectarivore",habitat:["forest","meadows","gardens"],region:["North America","Central America"],
+ altitude_min:0,altitude_max:3000,migration:"long_distance",
+ lifespan_years:8,clutch_size:2,eggs_per_year:2,incubation_days:15,
+ heart_rate_bpm:480,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"NT",population_trend:"decreasing",threats:["climate_change_mismatch","habitat_loss"],
+ convergent_with:[],
+ philosophy:"Migrates roughly 6,500km each way — from Alaska to Mexico — a journey of nearly 80 million body-lengths, proportionally one of the longest of any bird. Climate change is now shifting flower bloom times earlier than the bird's genetically-fixed migration schedule, creating a timing mismatch that may be harder to adapt to than any physical obstacle."},
+
+{id:10,name:"White-necked Jacobin",scientific:"Florisuga mellivora",family:"Hummingbirds",
+ mass_g:7.5,wingspan_cm:15,beak_length_mm:20,beak_curvature:0.3,beak_type:"straight-thin",
+ diet:"nectarivore",habitat:["lowland-forest"],region:["Central America","South America"],
+ altitude_min:0,altitude_max:1800,migration:"resident",
+ lifespan_years:8,clutch_size:2,eggs_per_year:2,incubation_days:17,
+ heart_rate_bpm:450,metabolic_rate:"extreme",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ convergent_with:[],
+ philosophy:"One of the few hummingbirds that does not enter torpor — it gambles on always finding enough food rather than powering down. A bet that only works in the unbroken abundance of lowland tropical forest, where flowers bloom year-round."},
+
+{id:11,name:"Booted Racket-tail",scientific:"Ocreatus underwoodii",family:"Hummingbirds",
+ mass_g:3,wingspan_cm:10,beak_length_mm:14,beak_curvature:0.2,beak_type:"straight-thin",
+ diet:"nectarivore",habitat:["cloud-forest","forest-edge"],region:["South America"],
+ altitude_min:1000,altitude_max:2300,migration:"resident",
+ lifespan_years:6,clutch_size:2,eggs_per_year:2,incubation_days:15,
+ heart_rate_bpm:500,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"LC",population_trend:"stable",threats:["deforestation"],
+ convergent_with:[],
+ philosophy:"Named for the fluffy white 'boots' on its legs and twin tail-streamers ending in dark rackets — both pure ornament. In a world ruled by efficiency, this bird is a reminder that evolution also rewards being noticed, not just being optimal."},
+
+{id:12,name:"Crimson Topaz",scientific:"Topaza pella",family:"Hummingbirds",
+ mass_g:11,wingspan_cm:17,beak_length_mm:24,beak_curvature:0.5,beak_type:"slightly-curved",
+ diet:"nectarivore",habitat:["lowland-forest","riverside"],region:["South America"],
+ altitude_min:0,altitude_max:500,migration:"resident",
+ lifespan_years:8,clutch_size:2,eggs_per_year:2,incubation_days:17,
+ heart_rate_bpm:400,metabolic_rate:"extreme",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["deforestation"],
+ convergent_with:[],
+ philosophy:"One of the largest and heaviest hummingbirds in the Amazon, with males performing aerial duels — looping around each other in tight figure-eights at full speed. Even at 11 grams, it is twice-removed from the bee-sized members of its family, a reminder of how wide this lineage's morphospace really is."},
+
+{id:13,name:"Andean Hillstar",scientific:"Oreotrochilus estella",family:"Hummingbirds",
+ mass_g:8,wingspan_cm:14,beak_length_mm:20,beak_curvature:0.5,beak_type:"straight-medium",
+ diet:"nectarivore",habitat:["alpine","puna-grassland"],region:["South America"],
+ altitude_min:3500,altitude_max:5200,migration:"resident",
+ lifespan_years:8,clutch_size:2,eggs_per_year:1,incubation_days:18,
+ heart_rate_bpm:300,metabolic_rate:"high",torpor:true,
+ iucn_status:"LC",population_trend:"stable",threats:["climate_change"],
+ convergent_with:[],
+ philosophy:"Lives higher than any other hummingbird — above 4,500m, where overnight temperatures drop below freezing. It survives by entering deep torpor every single night, dropping its body temperature close to ambient air, then must 'reboot' its metabolism each dawn before it can even open its eyes. A daily near-death and resurrection, repeated for eight years."},
+
+{id:14,name:"Black-throated Mango",scientific:"Anthracothorax nigricollis",family:"Hummingbirds",
+ mass_g:7,wingspan_cm:14,beak_length_mm:23,beak_curvature:0.6,beak_type:"slightly-curved",
+ diet:"nectarivore",habitat:["forest-edge","savanna","gardens"],region:["South America","Central America"],
+ altitude_min:0,altitude_max:1700,migration:"partial",
+ lifespan_years:7,clutch_size:2,eggs_per_year:2,incubation_days:16,
+ heart_rate_bpm:430,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"LC",population_trend:"increasing",threats:[],
+ convergent_with:[],
+ philosophy:"A generalist among specialists — comfortable in degraded habitat, gardens, and forest edges where many other hummingbirds cannot persist. Its success is a quiet lesson: in a family famous for extreme specialization, flexibility is also a viable strategy."},
+
+{id:15,name:"Frilled Coquette",scientific:"Lophornis magnificus",family:"Hummingbirds",
+ mass_g:2.8,wingspan_cm:8,beak_length_mm:13,beak_curvature:0.2,beak_type:"straight-thin",
+ diet:"nectarivore",habitat:["forest-edge","scrub"],region:["South America"],
+ altitude_min:0,altitude_max:1200,migration:"resident",
+ lifespan_years:6,clutch_size:2,eggs_per_year:2,incubation_days:14,
+ heart_rate_bpm:520,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_loss"],
+ convergent_with:[],
+ philosophy:"The male wears a cinnamon crest and spotted cheek-frills that look almost cartoonish — feathers that exist purely to be seen. At under 3 grams, this is one of the smallest birds on the planet, yet it carries some of the most elaborate plumage of any animal its size."},
+
+
+/* ═══════════ RAPTORS (12) — Birds of prey ═══════════
+   Apex predators of the air, scaled from
+   sparrow-sized owls to condors with 3m wingspans. */
+
+{id:16,name:"Peregrine Falcon",scientific:"Falco peregrinus",family:"Raptors",
+ mass_g:900,wingspan_cm:104,beak_length_mm:25,beak_curvature:3,beak_type:"hooked",
+ diet:"carnivore",habitat:["cliffs","urban","open-country"],region:["worldwide"],
+ altitude_min:0,altitude_max:4000,migration:"partial",
+ lifespan_years:17,clutch_size:3,eggs_per_year:3,incubation_days:32,
+ heart_rate_bpm:170,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["pesticides_historic"],
+ convergent_with:["Lanner Falcon"],
+ philosophy:"The fastest animal on Earth — over 320 km/h in a hunting stoop, a speed that would tear apart the lungs of most birds without specialized bony tubercles in its nostrils that break up the airflow. Nearly extinct by the 1970s due to DDT thinning its eggshells, it is now one of conservation's clearest victories — and now nests on skyscrapers, having found in cities a near-perfect substitute for cliffs."},
+
+{id:17,name:"Golden Eagle",scientific:"Aquila chrysaetos",family:"Raptors",
+ mass_g:4500,wingspan_cm:204,beak_length_mm:50,beak_curvature:3,beak_type:"hooked",
+ diet:"carnivore",habitat:["mountains","tundra","grassland"],region:["North America","Eurasia","Africa"],
+ altitude_min:0,altitude_max:5000,migration:"partial",
+ lifespan_years:30,clutch_size:2,eggs_per_year:1,incubation_days:43,
+ heart_rate_bpm:140,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_loss","persecution","wind_turbines"],
+ convergent_with:[],
+ philosophy:"With eyesight roughly 4-8x sharper than a human's, it can spot a hare from 3km away. Cainism — where the older eaglet kills its sibling in the nest — is routine in this species, a brutal form of brood reduction that ensures at least one chick survives lean years. Nature's insurance policy is sometimes fratricide."},
+
+{id:18,name:"Bald Eagle",scientific:"Haliaeetus leucocephalus",family:"Raptors",
+ mass_g:4300,wingspan_cm:200,beak_length_mm:55,beak_curvature:3,beak_type:"hooked",
+ diet:"piscivore",habitat:["coasts","lakes","rivers"],region:["North America"],
+ altitude_min:0,altitude_max:3000,migration:"partial",
+ lifespan_years:28,clutch_size:2,eggs_per_year:1,incubation_days:35,
+ heart_rate_bpm:150,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["lead_poisoning","habitat_loss"],
+ convergent_with:["Osprey"],
+ philosophy:"Reduced to fewer than 500 nesting pairs in the lower 48 US states by 1963 due to DDT — and now numbers over 300,000, one of the fastest raptor recoveries on record. Despite its fearsome image, it is also an opportunistic scavenger and frequently steals fish from ospreys rather than hunting its own — efficiency over pride."},
+
+{id:19,name:"Harpy Eagle",scientific:"Harpia harpyja",family:"Raptors",
+ mass_g:7000,wingspan_cm:200,beak_length_mm:60,beak_curvature:3.5,beak_type:"hooked",
+ diet:"carnivore",habitat:["lowland-rainforest"],region:["Central America","South America"],
+ altitude_min:0,altitude_max:900,migration:"resident",
+ lifespan_years:35,clutch_size:1,eggs_per_year:1,incubation_days:56,
+ heart_rate_bpm:120,metabolic_rate:"medium",torpor:false,
+ iucn_status:"VU",population_trend:"decreasing",threats:["deforestation","persecution"],
+ convergent_with:["Philippine Eagle"],
+ philosophy:"Its talons are larger than a grizzly bear's claws, capable of exerting over 50kg of force per square centimeter — enough to crush bone instantly. It hunts sloths and monkeys directly from the canopy, navigating dense forest at speed using short, broad wings — a different aerodynamic solution from open-country eagles entirely. Lays one egg every 2-3 years: among the slowest reproductive rates of any bird."},
+
+{id:20,name:"Secretarybird",scientific:"Sagittarius serpentarius",family:"Raptors",
+ mass_g:4000,wingspan_cm:210,beak_length_mm:45,beak_curvature:2.5,beak_type:"hooked",
+ diet:"carnivore",habitat:["savanna","grassland"],region:["Africa"],
+ altitude_min:0,altitude_max:3000,migration:"resident",
+ lifespan_years:19,clutch_size:2,eggs_per_year:1,incubation_days:45,
+ heart_rate_bpm:130,metabolic_rate:"medium",torpor:false,
+ iucn_status:"EN",population_trend:"decreasing",threats:["habitat_loss","collisions"],
+ convergent_with:[],
+ philosophy:"A raptor that hunts on foot, walking up to 30km a day across grassland, killing snakes — including venomous ones — by stamping with kicks that strike with five times its own body weight in force, faster than the snake can react. Long legs, an eagle's head, and a crane's gait: a body plan that looks like it was assembled from spare parts, yet works perfectly for its niche."},
+
+{id:21,name:"Snowy Owl",scientific:"Bubo scandiacus",family:"Raptors",
+ mass_g:1800,wingspan_cm:150,beak_length_mm:25,beak_curvature:3,beak_type:"hooked",
+ diet:"carnivore",habitat:["tundra","arctic"],region:["Arctic"],
+ altitude_min:0,altitude_max:300,migration:"partial",
+ lifespan_years:10,clutch_size:5,eggs_per_year:5,incubation_days:32,
+ heart_rate_bpm:180,metabolic_rate:"medium",torpor:false,
+ iucn_status:"VU",population_trend:"decreasing",threats:["climate_change"],
+ convergent_with:[],
+ philosophy:"Clutch size in this species isn't fixed — it tracks lemming population cycles directly. In boom years, a female may lay up to 11 eggs; in crash years, she may not breed at all. Its entire reproductive strategy is a live readout of an ecosystem most humans never see, three trophic levels down."},
+
+{id:22,name:"Andean Condor",scientific:"Vultur gryphus",family:"Raptors",
+ mass_g:11000,wingspan_cm:310,beak_length_mm:60,beak_curvature:2.5,beak_type:"hooked",
+ diet:"scavenger",habitat:["mountains","coastal-cliffs"],region:["South America"],
+ altitude_min:0,altitude_max:5000,migration:"resident",
+ lifespan_years:50,clutch_size:1,eggs_per_year:1,incubation_days:58,
+ heart_rate_bpm:100,metabolic_rate:"low",torpor:false,
+ iucn_status:"VU",population_trend:"decreasing",threats:["poisoning","persecution","lead"],
+ convergent_with:["Andean Hillstar"],
+ philosophy:"One of the largest flying birds, yet it almost never flaps — it can soar for 5 hours and 170km on thermals without a single wingbeat, expending barely more energy than sitting still. Breeds only every other year and doesn't reach sexual maturity until age 6-8. A species built entirely around patience: patience to find rising air, patience to find a carcass, patience to reproduce."},
+
+{id:23,name:"Osprey",scientific:"Pandion haliaetus",family:"Raptors",
+ mass_g:1600,wingspan_cm:170,beak_length_mm:35,beak_curvature:2.5,beak_type:"hooked",
+ diet:"piscivore",habitat:["coasts","lakes","rivers"],region:["worldwide"],
+ altitude_min:0,altitude_max:2000,migration:"long_distance",
+ lifespan_years:25,clutch_size:3,eggs_per_year:1,incubation_days:38,
+ heart_rate_bpm:160,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["pesticides_historic","habitat_loss"],
+ convergent_with:["Bald Eagle"],
+ philosophy:"The only raptor with a reversible outer toe, letting it grip fish with two toes forward and two back — a 'X' grip that no eagle can replicate. Spiny pads on its feet act like sandpaper against slippery fish. One of the most widely distributed raptors on Earth, found on every continent except Antarctica — a single body plan that works almost everywhere there is water and fish."},
+
+{id:24,name:"Red-tailed Hawk",scientific:"Buteo jamaicensis",family:"Raptors",
+ mass_g:1200,wingspan_cm:130,beak_length_mm:30,beak_curvature:2.5,beak_type:"hooked",
+ diet:"carnivore",habitat:["open-country","forest-edge","urban"],region:["North America"],
+ altitude_min:0,altitude_max:3500,migration:"partial",
+ lifespan_years:21,clutch_size:2,eggs_per_year:1,incubation_days:32,
+ heart_rate_bpm:170,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:[],
+ convergent_with:[],
+ philosophy:"Its iconic raspy scream is so recognizable that Hollywood dubs it over nearly every eagle shown on screen — including bald eagles, whose actual call is a weak, almost comedic chirp. A species whose acoustic identity has been culturally swapped with another, more famous bird, purely because it 'sounds' more like what we expect a raptor to sound like."},
+
+{id:25,name:"Lammergeier",scientific:"Gypaetus barbatus",family:"Raptors",
+ mass_g:6000,wingspan_cm:280,beak_length_mm:50,beak_curvature:2,beak_type:"hooked",
+ diet:"scavenger",habitat:["mountains","cliffs"],region:["Eurasia","Africa"],
+ altitude_min:500,altitude_max:5000,migration:"resident",
+ lifespan_years:40,clutch_size:2,eggs_per_year:1,incubation_days:55,
+ heart_rate_bpm:110,metabolic_rate:"low",torpor:false,
+ iucn_status:"NT",population_trend:"stable",threats:["poisoning","habitat_loss"],
+ convergent_with:[],
+ philosophy:"Roughly 85-90% of its diet is bone marrow — it carries bones up to the size of a lamb's femur to great heights and drops them onto rocks to shatter them, then swallows the splinters whole. Its stomach acid is strong enough (pH near 1) to dissolve bone within 24 hours. An entire ecological niche — bone-cracker — occupied almost solely by this one species."},
+
+{id:26,name:"Northern Goshawk",scientific:"Accipiter gentilis",family:"Raptors",
+ mass_g:1000,wingspan_cm:108,beak_length_mm:25,beak_curvature:2.5,beak_type:"hooked",
+ diet:"carnivore",habitat:["forest"],region:["North America","Eurasia"],
+ altitude_min:0,altitude_max:2000,migration:"partial",
+ lifespan_years:19,clutch_size:3,eggs_per_year:1,incubation_days:38,
+ heart_rate_bpm:175,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_loss"],
+ convergent_with:[],
+ philosophy:"A forest specialist that pursues prey through dense trees at speed, using short rounded wings and a long tail for split-second maneuverability — the opposite aerodynamic solution to a falcon's long pointed wings built for open-sky speed. Two raptor body-plans, two completely different physics problems, both solved by 'birds of prey.'"},
+
+{id:27,name:"Elf Owl",scientific:"Micrathene whitneyi",family:"Raptors",
+ mass_g:40,wingspan_cm:27,beak_length_mm:10,beak_curvature:2,beak_type:"hooked",
+ diet:"insectivore",habitat:["desert","saguaro-cactus"],region:["North America","Central America"],
+ altitude_min:0,altitude_max:2000,migration:"long_distance",
+ lifespan_years:6,clutch_size:3,eggs_per_year:1,incubation_days:24,
+ heart_rate_bpm:300,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_loss"],
+ convergent_with:[],
+ philosophy:"The smallest owl in the world — about the size of a sparrow, weighing less than a slice of bread. It nests almost exclusively in holes drilled into saguaro cacti by woodpeckers, meaning its entire life history depends on the prior labor of an entirely different bird family. A landlord-tenant relationship spanning species."},
+
+
+/* ═══════════ SONGBIRDS (30) — Passeriformes ═══════════
+   Half of all bird species belong here. The family
+   that learned to learn — vocal culture, dialect,
+   and minds dense with neurons for their size. */
+
+{id:28,name:"Common Nightingale",scientific:"Luscinia megarhynchos",family:"Songbirds",
+ mass_g:21,wingspan_cm:25,beak_length_mm:13,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"insectivore",habitat:["scrub","woodland"],region:["Europe","Africa","Asia"],
+ altitude_min:0,altitude_max:1500,migration:"long_distance",
+ lifespan_years:11,clutch_size:5,eggs_per_year:1,incubation_days:13,
+ heart_rate_bpm:450,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["habitat_loss"],
+ song_complexity:"very_high",song_repertoire:180,brain_relative:"large",
+ convergent_with:[],
+ philosophy:"A male's song repertoire can include over 180 distinct phrase types, sung mostly at night when ambient noise is lowest and sound carries furthest. Females appear to assess males partly by repertoire size — a vocal library as a proxy for cognitive and physical fitness. Singing, here, is a kind of resume."},
+
+{id:29,name:"Northern Mockingbird",scientific:"Mimus polyglottos",family:"Songbirds",
+ mass_g:48,wingspan_cm:35,beak_length_mm:18,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"omnivore",habitat:["urban","scrub","gardens"],region:["North America"],
+ altitude_min:0,altitude_max:2500,migration:"partial",
+ lifespan_years:8,clutch_size:4,eggs_per_year:3,incubation_days:13,
+ heart_rate_bpm:400,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ song_complexity:"extreme",song_repertoire:200,brain_relative:"large",
+ convergent_with:["Superb Lyrebird"],
+ philosophy:"Can mimic the songs of dozens of other species, plus car alarms, sirens, and human-made sounds, building a repertoire that grows throughout its life and may exceed 200 song types. Mimicry here isn't mistaken identity — it's a strategy: the more varied the song, the more it signals an experienced, surviving individual."},
+
+{id:30,name:"Superb Lyrebird",scientific:"Menura novaehollandiae",family:"Songbirds",
+ mass_g:1000,wingspan_cm:75,beak_length_mm:35,beak_curvature:0.5,beak_type:"straight-medium",
+ diet:"insectivore",habitat:["rainforest"],region:["Australia"],
+ altitude_min:0,altitude_max:1200,migration:"resident",
+ lifespan_years:20,clutch_size:1,eggs_per_year:1,incubation_days:50,
+ heart_rate_bpm:250,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["bushfires","habitat_loss"],
+ song_complexity:"extreme",song_repertoire:null,brain_relative:"large",
+ convergent_with:["Northern Mockingbird"],
+ philosophy:"Perhaps the most accomplished vocal mimic on the planet — recordings exist of wild lyrebirds reproducing chainsaws, camera shutters, and car alarms with eerie precision, layered over their own complex songs. At over 1kg, it is also one of the largest songbirds, an oddity in a group dominated by small bodies. Size and vocal virtuosity, both maximized in the same animal."},
+
+{id:31,name:"American Robin",scientific:"Turdus migratorius",family:"Songbirds",
+ mass_g:77,wingspan_cm:36,beak_length_mm:20,beak_curvature:0.3,beak_type:"straight-thin",
+ diet:"omnivore",habitat:["woodland","gardens","urban"],region:["North America"],
+ altitude_min:0,altitude_max:3000,migration:"partial",
+ lifespan_years:14,clutch_size:4,eggs_per_year:3,incubation_days:13,
+ heart_rate_bpm:350,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ song_complexity:"medium",song_repertoire:10,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Switches its diet seasonally — mostly earthworms and insects in spring/summer, almost entirely fruit in autumn/winter — a dietary plasticity that lets a single species occupy lawns, forests, and orchards across an entire continent. Generalism as a survival strategy, in contrast to the specialists elsewhere in this collection."},
+
+{id:32,name:"European Starling",scientific:"Sturnus vulgaris",family:"Songbirds",
+ mass_g:75,wingspan_cm:38,beak_length_mm:22,beak_curvature:0.3,beak_type:"straight-thin",
+ diet:"omnivore",habitat:["urban","farmland","grassland"],region:["Europe","North America (introduced)"],
+ altitude_min:0,altitude_max:2000,migration:"partial",
+ lifespan_years:15,clutch_size:5,eggs_per_year:2,incubation_days:12,
+ heart_rate_bpm:380,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["agricultural_intensification"],
+ song_complexity:"high",song_repertoire:35,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"100 birds released in New York's Central Park in 1890 — an attempt to introduce every bird mentioned in Shakespeare to America — became the ancestors of over 200 million starlings across the continent today. Their murmurations, flocks of thousands moving as a single fluid shape, follow simple local rules: each bird tracks roughly seven neighbors. Complexity from simplicity, at a continental scale, from one Victorian's sentimental gesture."},
+
+{id:33,name:"Common Raven",scientific:"Corvus corax",family:"Songbirds",
+ mass_g:1200,wingspan_cm:130,beak_length_mm:60,beak_curvature:1.5,beak_type:"hooked-thick",
+ diet:"omnivore",habitat:["worldwide"],region:["worldwide"],
+ altitude_min:0,altitude_max:5000,migration:"resident",
+ lifespan_years:21,clutch_size:5,eggs_per_year:1,incubation_days:21,
+ heart_rate_bpm:300,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:[],
+ song_complexity:"high",song_repertoire:30,brain_relative:"very_large",
+ convergent_with:[],
+ philosophy:"Capable of using tools, planning for future needs, and recognizing themselves in mirrors — cognitive feats once thought exclusive to great apes. Studies have shown ravens will refuse a worse reward if they witness another raven receiving better — a possible sense of fairness. One of the widest-ranging land birds on Earth, found from the Arctic to North African deserts, in a body plan barely changed in millions of years."},
+
+{id:34,name:"Blue Jay",scientific:"Cyanocitta cristata",family:"Songbirds",
+ mass_g:85,wingspan_cm:40,beak_length_mm:25,beak_curvature:0.5,beak_type:"straight-thick",
+ diet:"omnivore",habitat:["forest","urban","gardens"],region:["North America"],
+ altitude_min:0,altitude_max:2000,migration:"partial",
+ lifespan_years:17,clutch_size:4,eggs_per_year:1,incubation_days:17,
+ heart_rate_bpm:380,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ song_complexity:"medium",song_repertoire:20,brain_relative:"large",
+ convergent_with:[],
+ philosophy:"A single Blue Jay can cache and remember the locations of thousands of acorns each autumn, using this spatial memory to survive winter — and the acorns it forgets effectively replant oak forests across eastern North America. A bird's poor memory, multiplied across a population, becomes a forest's reproductive strategy."},
+
+{id:35,name:"Barn Swallow",scientific:"Hirundo rustica",family:"Songbirds",
+ mass_g:19,wingspan_cm:33,beak_length_mm:8,beak_curvature:0,beak_type:"flat-broad",
+ diet:"insectivore",habitat:["farmland","open-country"],region:["worldwide"],
+ altitude_min:0,altitude_max:3000,migration:"long_distance",
+ lifespan_years:8,clutch_size:5,eggs_per_year:2,incubation_days:15,
+ heart_rate_bpm:500,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["insect_decline","habitat_loss"],
+ song_complexity:"medium",song_repertoire:15,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Catches all of its food — flying insects — on the wing, never landing to feed. Its mouth is essentially a wide, flattened net, the opposite design philosophy of a hummingbird's needle bill. Some individuals migrate over 10,000km between Europe and South Africa twice a year, navigating using the sun, stars, and Earth's magnetic field simultaneously."},
+
+{id:36,name:"Arctic Warbler",scientific:"Phylloscopus borealis",family:"Songbirds",
+ mass_g:10,wingspan_cm:20,beak_length_mm:10,beak_curvature:0.3,beak_type:"straight-thin",
+ diet:"insectivore",habitat:["taiga","tundra-edge"],region:["Eurasia","Alaska"],
+ altitude_min:0,altitude_max:1500,migration:"long_distance",
+ lifespan_years:6,clutch_size:6,eggs_per_year:1,incubation_days:13,
+ heart_rate_bpm:550,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_loss_wintering"],
+ song_complexity:"medium",song_repertoire:5,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"At just 10 grams, individuals breeding in Alaska migrate to Southeast Asia — one of the longest migrations relative to body size of any songbird, crossing the Bering Sea and traversing nearly the entire Asian continent. A creature smaller than a AA battery, navigating across a hemisphere by instinct alone."},
+
+{id:37,name:"Zebra Finch",scientific:"Taeniopygia guttata",family:"Songbirds",
+ mass_g:12,wingspan_cm:17,beak_length_mm:10,beak_curvature:1,beak_type:"conical-thick",
+ diet:"granivore",habitat:["arid-grassland","scrub"],region:["Australia"],
+ altitude_min:0,altitude_max:1000,migration:"resident",
+ lifespan_years:5,clutch_size:5,eggs_per_year:4,incubation_days:13,
+ heart_rate_bpm:600,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ song_complexity:"medium",song_repertoire:1,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"The lab rat of birdsong research — males learn their single song from their father during a critical developmental window, and once crystallized in adulthood, the song never changes again. This fixed, learned-then-locked vocal pattern has made it the primary model for understanding how human infants acquire speech. A small Australian finch, accidentally central to neuroscience."},
+
+{id:38,name:"House Sparrow",scientific:"Passer domesticus",family:"Songbirds",
+ mass_g:28,wingspan_cm:24,beak_length_mm:12,beak_curvature:1,beak_type:"conical-thick",
+ diet:"omnivore",habitat:["urban","farmland","worldwide"],region:["worldwide (introduced)"],
+ altitude_min:0,altitude_max:4500,migration:"resident",
+ lifespan_years:3,clutch_size:4,eggs_per_year:3,incubation_days:12,
+ heart_rate_bpm:460,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["urban_intensification","insect_decline"],
+ song_complexity:"low",song_repertoire:3,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Possibly the most widely distributed wild bird on Earth — found on every continent except Antarctica, almost always in human settlements, from Arctic mining towns to equatorial cities. Yet across much of Europe its populations have crashed by over 60% since the 1970s, for reasons still not fully understood. Ubiquity is not the same as security."},
+
+{id:39,name:"Indigo Bunting",scientific:"Passerina cyanea",family:"Songbirds",
+ mass_g:14,wingspan_cm:21,beak_length_mm:10,beak_curvature:1,beak_type:"conical-medium",
+ diet:"granivore",habitat:["scrub","forest-edge"],region:["North America"],
+ altitude_min:0,altitude_max:2000,migration:"long_distance",
+ lifespan_years:8,clutch_size:4,eggs_per_year:2,incubation_days:13,
+ heart_rate_bpm:480,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["habitat_loss"],
+ song_complexity:"medium",song_repertoire:1,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Its blue color is an illusion — there is no blue pigment in its feathers at all. Microscopic structures in the feather barbs scatter light so that only blue wavelengths reflect back; the same feather, crushed to powder, would look brown. Migrates at night using star patterns, and lab experiments show young birds learn the night sky's rotation around Polaris before they ever migrate — celestial navigation, learned like a song."},
+
+{id:40,name:"Wood Thrush",scientific:"Hylocichla mustelina",family:"Songbirds",
+ mass_g:48,wingspan_cm:33,beak_length_mm:16,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"insectivore",habitat:["deciduous-forest"],region:["North America","Central America"],
+ altitude_min:0,altitude_max:1500,migration:"long_distance",
+ lifespan_years:9,clutch_size:4,eggs_per_year:2,incubation_days:13,
+ heart_rate_bpm:380,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["forest_fragmentation","habitat_loss_wintering"],
+ song_complexity:"very_high",song_repertoire:50,brain_relative:"large",
+ convergent_with:[],
+ philosophy:"Its syrinx (voice organ) has two independently controlled sides, allowing it to sing two different pitches simultaneously — a literal duet with itself, producing the flute-like, layered song many consider the most beautiful in North America. Population declines track forest fragmentation precisely: this species needs large, unbroken tracts of forest interior, and simply cannot persist in small woodlots no matter how green they look."},
+
+{id:41,name:"Eurasian Blackbird",scientific:"Turdus merula",family:"Songbirds",
+ mass_g:100,wingspan_cm:36,beak_length_mm:22,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"omnivore",habitat:["woodland","gardens","urban"],region:["Europe","Asia"],
+ altitude_min:0,altitude_max:2000,migration:"partial",
+ lifespan_years:14,clutch_size:4,eggs_per_year:3,incubation_days:14,
+ heart_rate_bpm:340,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ song_complexity:"high",song_repertoire:30,brain_relative:"large",
+ convergent_with:[],
+ philosophy:"Urban blackbirds sing earlier in the morning and at higher pitches than their forest-dwelling counterparts — an adaptation to be heard over traffic noise. Within just a few generations, city populations have measurably diverged in song structure, body size, and even personality (boldness) from rural ones — evolution, observably, in real time, in parking lots."},
+
+{id:42,name:"Great Tit",scientific:"Parus major",family:"Songbirds",
+ mass_g:18,wingspan_cm:24,beak_length_mm:11,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"insectivore",habitat:["woodland","gardens"],region:["Europe","Asia"],
+ altitude_min:0,altitude_max:2500,migration:"resident",
+ lifespan_years:9,clutch_size:9,eggs_per_year:2,incubation_days:13,
+ heart_rate_bpm:480,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ song_complexity:"high",song_repertoire:8,brain_relative:"large",
+ convergent_with:[],
+ philosophy:"Subject of one of ecology's longest-running studies (Wytham Woods, since 1947), revealing that 'personality' in birds is real and heritable — bold and shy individuals exist in stable proportions because each does better in different conditions. Clutches of up to 11-13 eggs are timed to hatch exactly when caterpillar abundance peaks — a forecast made weeks in advance, based on temperature cues alone."},
+
+{id:43,name:"Long-tailed Widowbird",scientific:"Euplectes progne",family:"Songbirds",
+ mass_g:32,wingspan_cm:25,beak_length_mm:13,beak_curvature:1,beak_type:"conical-thick",
+ diet:"granivore",habitat:["grassland","marsh"],region:["Africa"],
+ altitude_min:1000,altitude_max:2500,migration:"resident",
+ lifespan_years:6,clutch_size:3,eggs_per_year:2,incubation_days:14,
+ heart_rate_bpm:500,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["habitat_loss"],
+ song_complexity:"low",song_repertoire:2,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"During breeding season, males grow tail feathers up to 50cm — more than half a meter on a sparrow-sized body — purely to attract mates. A classic 1982 experiment cut some males' tails short and extended others': males with artificially lengthened tails secured significantly more mates, direct experimental proof of sexual selection acting on a single visible trait."},
+
+{id:44,name:"Superb Fairywren",scientific:"Malurus cyaneus",family:"Songbirds",
+ mass_g:10,wingspan_cm:15,beak_length_mm:9,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"insectivore",habitat:["scrub","woodland-edge"],region:["Australia"],
+ altitude_min:0,altitude_max:1000,migration:"resident",
+ lifespan_years:5,clutch_size:3,eggs_per_year:3,incubation_days:14,
+ heart_rate_bpm:550,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_fragmentation"],
+ song_complexity:"high",song_repertoire:4,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Despite forming apparently monogamous pairs, genetic testing reveals up to 75% of chicks are fathered by males outside the pair-bond — one of the highest infidelity rates recorded in any bird. 'Faithful pair' and 'genetic reality' turn out to be two very different things, and this species exposed the gap for ornithology generally."},
+
+{id:45,name:"Red-winged Blackbird",scientific:"Agelaius phoeniceus",family:"Songbirds",
+ mass_g:53,wingspan_cm:34,beak_length_mm:20,beak_curvature:0.5,beak_type:"conical-medium",
+ diet:"omnivore",habitat:["marsh","grassland","farmland"],region:["North America"],
+ altitude_min:0,altitude_max:2500,migration:"partial",
+ lifespan_years:6,clutch_size:4,eggs_per_year:2,incubation_days:12,
+ heart_rate_bpm:420,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["wetland_loss"],
+ song_complexity:"medium",song_repertoire:2,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"One of the most abundant birds in North America, with a polygynous mating system where a single dominant male may control a marsh territory containing 5-15 females simultaneously. Despite this apparent advantage, paternity studies show even these 'harem-holding' males lose a significant share of fertilizations to sneaking outside males — dominance and reproductive success are not the same currency."},
+
+{id:46,name:"White-throated Sparrow",scientific:"Zonotrichia albicollis",family:"Songbirds",
+ mass_g:26,wingspan_cm:23,beak_length_mm:11,beak_curvature:0.8,beak_type:"conical-medium",
+ diet:"granivore",habitat:["forest-edge","scrub"],region:["North America"],
+ altitude_min:0,altitude_max:2000,migration:"long_distance",
+ lifespan_years:9,clutch_size:4,eggs_per_year:2,incubation_days:12,
+ heart_rate_bpm:430,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["habitat_loss"],
+ song_complexity:"medium",song_repertoire:1,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Exists in two genetically distinct color morphs — white-striped and tan-striped — controlled by a chromosomal rearrangement functioning almost like a second sex. Birds nearly always pair with the opposite morph, regardless of their own sex, creating effectively four 'genders' in terms of mating roles. One of the strangest mating systems known in vertebrates, hiding in plain sight at backyard feeders."},
+
+{id:47,name:"Eurasian Wren",scientific:"Troglodytes troglodytes",family:"Songbirds",
+ mass_g:9,wingspan_cm:16,beak_length_mm:14,beak_curvature:1,beak_type:"slightly-curved",
+ diet:"insectivore",habitat:["woodland","scrub","gardens"],region:["Europe","Asia","North Africa"],
+ altitude_min:0,altitude_max:2000,migration:"partial",
+ lifespan_years:7,clutch_size:6,eggs_per_year:2,incubation_days:16,
+ heart_rate_bpm:550,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["cold_winters"],
+ song_complexity:"very_high",song_repertoire:1,brain_relative:"large",
+ convergent_with:[],
+ philosophy:"At just 9 grams, its song reaches around 90 decibels at close range — proportionally one of the loudest sounds produced by any animal relative to body size, roughly ten times louder per gram than a crowing rooster. A male builds multiple 'cock nests' as options, and the female chooses which to line and use — a tiny bird offering a portfolio of real estate."},
+
+{id:48,name:"Common Cuckoo",scientific:"Cuculus canorus",family:"Songbirds",
+ mass_g:110,wingspan_cm:58,beak_length_mm:20,beak_curvature:1,beak_type:"slightly-curved",
+ diet:"insectivore",habitat:["woodland","farmland","reedbed"],region:["Europe","Asia","Africa"],
+ altitude_min:0,altitude_max:3000,migration:"long_distance",
+ lifespan_years:6,clutch_size:1,eggs_per_year:12,incubation_days:12,
+ heart_rate_bpm:300,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["host_decline","habitat_loss"],
+ song_complexity:"low",song_repertoire:1,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Lays its eggs in the nests of other species — often choosing a host whose eggs closely match its own in color and pattern, with different cuckoo lineages specializing on different hosts (a phenomenon called 'gentes'). The chick hatches first, then instinctively pushes all other eggs out of the nest, ensuring it receives 100% of its foster parents' care. An entire reproductive strategy built on deception, refined over millions of years of evolutionary arms race with its hosts."},
+
+{id:49,name:"Pied Flycatcher",scientific:"Ficedula hypoleuca",family:"Songbirds",
+ mass_g:13,wingspan_cm:23,beak_length_mm:9,beak_curvature:0.3,beak_type:"flat-broad",
+ diet:"insectivore",habitat:["deciduous-forest"],region:["Europe"],
+ altitude_min:0,altitude_max:1500,migration:"long_distance",
+ lifespan_years:5,clutch_size:6,eggs_per_year:1,incubation_days:14,
+ heart_rate_bpm:480,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["climate_change_mismatch"],
+ song_complexity:"medium",song_repertoire:3,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"A textbook case of climate-driven mismatch: caterpillar peaks (its main food for chicks) now occur earlier due to warmer springs, but this species' migration timing — set by day length in Africa — hasn't shifted to match. Populations breeding latest relative to caterpillar peak have declined the most. A bird's internal calendar, calibrated over millennia, suddenly running too slow for the world."},
+
+{id:50,name:"Golden-winged Sunbird",scientific:"Drepanorhynchus reichenowi",family:"Songbirds",
+ mass_g:14,wingspan_cm:15,beak_length_mm:35,beak_curvature:3,beak_type:"strongly-curved",
+ diet:"nectarivore",habitat:["montane-forest","alpine-moorland"],region:["Africa"],
+ altitude_min:1800,altitude_max:4000,migration:"resident",
+ lifespan_years:8,clutch_size:2,eggs_per_year:2,incubation_days:14,
+ heart_rate_bpm:480,metabolic_rate:"high",torpor:true,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_degradation"],
+ song_complexity:"medium",song_repertoire:3,brain_relative:"medium",
+ convergent_with:["Sword-billed Hummingbird","Marvelous Spatuletail"],
+ philosophy:"Its long, decurved bill is shaped almost identically to that of unrelated hummingbirds an ocean away — both evolved to extract nectar from tubular flowers (in this case, Lobelia). Old World sunbirds and New World hummingbirds last shared a common ancestor over 60 million years ago, yet arrived at near-identical solutions independently. This is convergent evolution made visible."},
+
+{id:51,name:"Vermilion Flycatcher",scientific:"Pyrocephalus rubinus",family:"Songbirds",
+ mass_g:13,wingspan_cm:24,beak_length_mm:10,beak_curvature:0.5,beak_type:"flat-broad",
+ diet:"insectivore",habitat:["desert","scrub","riverside"],region:["North America","South America"],
+ altitude_min:0,altitude_max:3000,migration:"partial",
+ lifespan_years:5,clutch_size:3,eggs_per_year:2,incubation_days:14,
+ heart_rate_bpm:480,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ song_complexity:"medium",song_repertoire:2,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"The male's brilliant red plumage comes from carotenoid pigments obtained entirely through diet — meaning the redness of any individual male is literally a measure of his foraging success and health, visible to any female assessing him. Color, here, is not decoration but an honest, hard-to-fake signal of competence."},
+
+{id:52,name:"Splendid Fairywren",scientific:"Malurus splendens",family:"Songbirds",
+ mass_g:10,wingspan_cm:15,beak_length_mm:9,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"insectivore",habitat:["scrub","mallee"],region:["Australia"],
+ altitude_min:0,altitude_max:1000,migration:"resident",
+ lifespan_years:5,clutch_size:3,eggs_per_year:2,incubation_days:14,
+ heart_rate_bpm:550,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_fragmentation"],
+ song_complexity:"high",song_repertoire:5,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Males sing a 'Type II' song specifically in response to hearing a predator's call — a vocal display that seems to say 'I see you, and I'm not afraid,' potentially deterring an attack by signaling vigilance. Singing as a shield, not just a love song."},
+
+{id:53,name:"Sage Thrasher",scientific:"Oreoscoptes montanus",family:"Songbirds",
+ mass_g:43,wingspan_cm:33,beak_length_mm:16,beak_curvature:1,beak_type:"slightly-curved",
+ diet:"omnivore",habitat:["sagebrush-steppe"],region:["North America"],
+ altitude_min:1000,altitude_max:2500,migration:"long_distance",
+ lifespan_years:8,clutch_size:4,eggs_per_year:2,incubation_days:14,
+ heart_rate_bpm:400,metabolic_rate:"medium",torpor:false,
+ iucn_status:"NT",population_trend:"decreasing",threats:["sagebrush_loss"],
+ song_complexity:"high",song_repertoire:20,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Entirely dependent on sagebrush ecosystems, which have shrunk by over 50% across the American West due to agriculture, fire cycles, and energy development. Its decline tracks one specific plant genus almost perfectly — a single-species story that is really the story of an entire vanishing biome."},
+
+{id:54,name:"Eastern Bluebird",scientific:"Sialia sialis",family:"Songbirds",
+ mass_g:31,wingspan_cm:30,beak_length_mm:13,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"insectivore",habitat:["open-woodland","farmland"],region:["North America"],
+ altitude_min:0,altitude_max:2000,migration:"partial",
+ lifespan_years:6,clutch_size:4,eggs_per_year:2,incubation_days:13,
+ heart_rate_bpm:430,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["nest_competition"],
+ song_complexity:"medium",song_repertoire:5,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Populations crashed through the mid-20th century due to competition from introduced House Sparrows and starlings for nest cavities — then recovered dramatically through one of the simplest conservation interventions ever: volunteers installing thousands of nest boxes with entrance holes too small for the competitors. Sometimes the fix for a complex problem is a piece of wood with a hole of the right diameter."},
+
+{id:55,name:"Bohemian Waxwing",scientific:"Bombycilla garrulus",family:"Songbirds",
+ mass_g:55,wingspan_cm:35,beak_length_mm:10,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"frugivore",habitat:["boreal-forest"],region:["North America","Eurasia"],
+ altitude_min:0,altitude_max:2000,migration:"partial",
+ lifespan_years:7,clutch_size:5,eggs_per_year:1,incubation_days:14,
+ heart_rate_bpm:420,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ song_complexity:"low",song_repertoire:1,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Survives winters almost entirely on fermented berries, and can become visibly intoxicated — sometimes fatally, flying into windows — from the alcohol content of overripe fruit. One of the few wild animals regularly documented getting drunk as a side-effect of its normal diet, a quirky overlap between ecology and pharmacology."},
+
+{id:56,name:"Common Chaffinch",scientific:"Fringilla coelebs",family:"Songbirds",
+ mass_g:21,wingspan_cm:26,beak_length_mm:12,beak_curvature:1,beak_type:"conical-medium",
+ diet:"granivore",habitat:["woodland","gardens","farmland"],region:["Europe","Asia","Africa"],
+ altitude_min:0,altitude_max:2000,migration:"partial",
+ lifespan_years:8,clutch_size:5,eggs_per_year:1,incubation_days:13,
+ heart_rate_bpm:450,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ song_complexity:"high",song_repertoire:3,brain_relative:"medium",
+ convergent_with:[],
+ philosophy:"Different regional populations sing distinctly different 'dialects' of the same basic song — a young male that fails to hear adult song during a critical early-life window will produce only a simplified, abnormal version as an adult. One of the foundational species in the discovery that birdsong, like human language, must be learned, not merely inherited."},
+
+{id:57,name:"Crimson Sunbird",scientific:"Aethopyga siparaja",family:"Songbirds",
+ mass_g:6,wingspan_cm:11,beak_length_mm:22,beak_curvature:2.5,beak_type:"strongly-curved",
+ diet:"nectarivore",habitat:["forest","gardens","mangrove"],region:["Asia"],
+ altitude_min:0,altitude_max:1600,migration:"resident",
+ lifespan_years:6,clutch_size:2,eggs_per_year:2,incubation_days:15,
+ heart_rate_bpm:520,metabolic_rate:"extreme",torpor:true,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_loss"],
+ song_complexity:"medium",song_repertoire:2,brain_relative:"medium",
+ convergent_with:["Ruby-throated Hummingbird","Golden-winged Sunbird"],
+ philosophy:"Singapore's national bird — found in gardens and forest edges across the city, it shows the same curved-bill, nectar-feeding solution as hummingbirds in the Americas, yet sunbirds, unlike hummingbirds, can perch to feed and rarely hover. Same problem (reaching nectar in tubular flowers), two different flight solutions, on opposite sides of the planet."},
+
+/* ═══════════ WATERBIRDS (15) — Wetland & freshwater specialists ═══════════
+   Bodies built for an interface — half submerged,
+   half airborne, navigating two media at once. */
+
+{id:58,name:"Mallard",scientific:"Anas platyrhynchos",family:"Waterbirds",
+ mass_g:1100,wingspan_cm:90,beak_length_mm:55,beak_curvature:0,beak_type:"flat-broad",
+ diet:"omnivore",habitat:["wetland","lakes","urban-ponds"],region:["worldwide"],
+ altitude_min:0,altitude_max:3000,migration:"partial",
+ lifespan_years:10,clutch_size:10,eggs_per_year:1,incubation_days:28,
+ heart_rate_bpm:230,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["hybridization_with_domestics"],
+ convergent_with:[],
+ philosophy:"Ancestor of nearly all domestic duck breeds, and so genetically flexible that wild Mallards now hybridize with feral domestic ducks worldwide, diluting wild gene pools. Its bill contains comb-like lamellae for filtering food from water — a sieve built into the mouth, the same basic engineering principle as a baleen whale, at vastly different scale."},
+
+{id:59,name:"Great Blue Heron",scientific:"Ardea herodias",family:"Waterbirds",
+ mass_g:2400,wingspan_cm:183,beak_length_mm:150,beak_curvature:0.5,beak_type:"spear-thin",
+ diet:"piscivore",habitat:["wetland","coasts","rivers"],region:["North America"],
+ altitude_min:0,altitude_max:2000,migration:"partial",
+ lifespan_years:15,clutch_size:4,eggs_per_year:1,incubation_days:28,
+ heart_rate_bpm:150,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["wetland_loss"],
+ convergent_with:[],
+ philosophy:"Stands motionless for long periods, then strikes with a neck that uncoils like a spring — an S-shaped curve in the vertebrae stores tension the way a drawn bow does. Despite a wingspan of nearly 2 meters, it weighs only 2.4kg — pneumatic, hollow bones make a body that's mostly air."},
+
+{id:60,name:"Mute Swan",scientific:"Cygnus olor",family:"Waterbirds",
+ mass_g:11000,wingspan_cm:225,beak_length_mm:75,beak_curvature:0.3,beak_type:"flat-broad",
+ diet:"herbivore",habitat:["lakes","rivers","wetland"],region:["Europe","Asia"],
+ altitude_min:0,altitude_max:1500,migration:"partial",
+ lifespan_years:12,clutch_size:6,eggs_per_year:1,incubation_days:36,
+ heart_rate_bpm:170,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["lead_poisoning","collisions"],
+ convergent_with:[],
+ philosophy:"One of the heaviest flying birds, requiring a long running takeoff across water — sometimes 30 meters — to generate enough lift. Famously monogamous, often for life, and fiercely territorial; its aggression toward perceived threats near a nest is powerful enough to break a human arm, a fact regularly (and incorrectly) exaggerated into 'can break your arm with one wing,' though the underlying force is real."},
+
+{id:61,name:"American Coot",scientific:"Fulica americana",family:"Waterbirds",
+ mass_g:650,wingspan_cm:70,beak_length_mm:30,beak_curvature:0.5,beak_type:"conical-thick",
+ diet:"omnivore",habitat:["wetland","lakes"],region:["North America"],
+ altitude_min:0,altitude_max:3000,migration:"partial",
+ lifespan_years:9,clutch_size:9,eggs_per_year:1,incubation_days:23,
+ heart_rate_bpm:280,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ convergent_with:[],
+ philosophy:"Not a duck, despite appearances — it's more closely related to cranes and rails. Instead of webbed feet, it has broad lobed toes that fold flat on the backstroke and spread wide on the power stroke, a different solution to the same propulsion problem. Famous for brutal sibling rivalry: parents sometimes selectively feed only certain chicks, and weaker siblings are attacked and may starve — brood reduction as active parental choice, not passive neglect."},
+
+{id:62,name:"Greater Flamingo",scientific:"Phoenicopterus roseus",family:"Waterbirds",
+ mass_g:3000,wingspan_cm:150,beak_length_mm:130,beak_curvature:4,beak_type:"filter-bent",
+ diet:"filter-feeder",habitat:["saline-lakes","lagoons"],region:["Africa","Europe","Asia"],
+ altitude_min:0,altitude_max:4500,migration:"partial",
+ lifespan_years:30,clutch_size:1,eggs_per_year:1,incubation_days:30,
+ heart_rate_bpm:200,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_loss","disturbance"],
+ convergent_with:[],
+ philosophy:"Its pink color comes entirely from carotenoid pigments in the algae and crustaceans it eats — a captive flamingo on an unsupplemented diet will fade to white. Feeds upside-down, with its bent bill held backwards in the water, using its tongue as a piston to pump water through comb-like filters at up to several pumps per second. One of the most anatomically inverted feeding postures of any bird."},
+
+{id:63,name:"Common Loon",scientific:"Gavia immer",family:"Waterbirds",
+ mass_g:4000,wingspan_cm:140,beak_length_mm:75,beak_curvature:0.3,beak_type:"spear-thin",
+ diet:"piscivore",habitat:["lakes","coasts"],region:["North America"],
+ altitude_min:0,altitude_max:1500,migration:"long_distance",
+ lifespan_years:25,clutch_size:2,eggs_per_year:1,incubation_days:28,
+ heart_rate_bpm:170,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["lake_acidification","mercury","lead_tackle"],
+ convergent_with:["Western Grebe"],
+ philosophy:"Its bones are solid, not hollow like most birds — added density that helps it dive up to 60 meters deep in pursuit of fish. This same density makes takeoff so costly that it needs up to 400 meters of open water runway to become airborne, and a loon grounded on land (where its legs, set far back for swimming, can barely support it) is essentially helpless. A body perfectly tuned for one medium becomes a liability in another."},
+
+{id:64,name:"Wood Duck",scientific:"Aix sponsa",family:"Waterbirds",
+ mass_g:680,wingspan_cm:73,beak_length_mm:35,beak_curvature:0.5,beak_type:"flat-broad",
+ diet:"omnivore",habitat:["wooded-wetland","rivers"],region:["North America"],
+ altitude_min:0,altitude_max:1500,migration:"partial",
+ lifespan_years:10,clutch_size:12,eggs_per_year:1,incubation_days:30,
+ heart_rate_bpm:250,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["nest_site_loss"],
+ convergent_with:[],
+ philosophy:"Nests in tree cavities up to 15 meters above ground or water — and within 24 hours of hatching, fluffy ducklings leap from the nest hole to the ground or water below, bouncing off impact with no injury thanks to their tiny mass and downy cushioning. A literal leap of faith, hardwired as the very first independent act of life."},
+
+{id:65,name:"Black-necked Stilt",scientific:"Himantopus mexicanus",family:"Waterbirds",
+ mass_g:165,wingspan_cm:71,beak_length_mm:60,beak_curvature:0,beak_type:"straight-thin-long",
+ diet:"insectivore",habitat:["wetland","mudflats","saltpans"],region:["North America","South America"],
+ altitude_min:0,altitude_max:1500,migration:"partial",
+ lifespan_years:10,clutch_size:4,eggs_per_year:1,incubation_days:25,
+ heart_rate_bpm:380,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["wetland_loss"],
+ convergent_with:[],
+ philosophy:"Has the second-longest legs relative to body size of any bird (after flamingos) — proportionally equivalent to a human standing on stilts twice their own height. This lets it wade into deeper water than most shorebirds, accessing a feeding zone unavailable to shorter-legged competitors. Height as a foraging-niche strategy."},
+
+{id:66,name:"White Stork",scientific:"Ciconia ciconia",family:"Waterbirds",
+ mass_g:3500,wingspan_cm:200,beak_length_mm:180,beak_curvature:0,beak_type:"spear-thick",
+ diet:"carnivore",habitat:["wetland","farmland","grassland"],region:["Europe","Africa"],
+ altitude_min:0,altitude_max:2000,migration:"long_distance",
+ lifespan_years:20,clutch_size:4,eggs_per_year:1,incubation_days:33,
+ heart_rate_bpm:180,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["powerlines","habitat_loss"],
+ convergent_with:[],
+ philosophy:"Migrates between Europe and Africa almost entirely by soaring on thermals, avoiding long sea crossings (where thermals don't form) by funneling through narrow land bridges like Gibraltar and the Bosphorus — creating massive seasonal bottlenecks of tens of thousands of birds. The folklore of storks delivering babies likely originates from their habit of nesting on chimneys near where human babies were, in fact, often born by the warm hearth."},
+
+{id:67,name:"Whooper Swan",scientific:"Cygnus cygnus",family:"Waterbirds",
+ mass_g:9500,wingspan_cm:225,beak_length_mm:110,beak_curvature:0.3,beak_type:"flat-broad",
+ diet:"herbivore",habitat:["lakes","wetland","tundra"],region:["Eurasia"],
+ altitude_min:0,altitude_max:2000,migration:"long_distance",
+ lifespan_years:20,clutch_size:5,eggs_per_year:1,incubation_days:36,
+ heart_rate_bpm:175,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["lead_poisoning","powerlines"],
+ convergent_with:[],
+ philosophy:"Among the highest-flying birds ever recorded — tracked by radar at altitudes over 8,200m, higher than Mount Everest, in air so thin and cold it would kill an unadapted animal within minutes. Its hemoglobin has a uniquely high oxygen affinity, extracting what little oxygen exists at that altitude more efficiently than almost any other vertebrate."},
+
+{id:68,name:"Pied Avocet",scientific:"Recurvirostra avosetta",family:"Waterbirds",
+ mass_g:300,wingspan_cm:77,beak_length_mm:80,beak_curvature:-3,beak_type:"upcurved",
+ diet:"insectivore",habitat:["lagoons","saltpans","mudflats"],region:["Europe","Asia","Africa"],
+ altitude_min:0,altitude_max:1000,migration:"partial",
+ lifespan_years:10,clutch_size:4,eggs_per_year:1,incubation_days:24,
+ heart_rate_bpm:320,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["wetland_loss"],
+ convergent_with:[],
+ philosophy:"One of the few birds with a bill that curves upward rather than down — swept side to side through shallow water and soft mud like a scythe, detecting prey by touch via sensitive nerve endings near the tip. An entire feeding technique built around bending the rules of bill-shape in the opposite direction from almost everything else."},
+
+{id:69,name:"Anhinga",scientific:"Anhinga anhinga",family:"Waterbirds",
+ mass_g:1350,wingspan_cm:117,beak_length_mm:80,beak_curvature:0,beak_type:"spear-thin",
+ diet:"piscivore",habitat:["freshwater-wetland","swamps"],region:["Americas"],
+ altitude_min:0,altitude_max:1000,migration:"partial",
+ lifespan_years:9,clutch_size:4,eggs_per_year:1,incubation_days:28,
+ heart_rate_bpm:200,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["wetland_loss"],
+ convergent_with:[],
+ philosophy:"Unlike most waterbirds, its feathers are not waterproof — by design. Reduced preen-oil makes it less buoyant, letting it swim almost fully submerged with just its snake-like neck above water (earning it the nickname 'snakebird'). The cost: after every dive it must perch with wings spread to dry, vulnerable, for up to 30 minutes — buoyancy traded directly for hunting stealth."},
+
+{id:70,name:"Roseate Spoonbill",scientific:"Platalea ajaja",family:"Waterbirds",
+ mass_g:1400,wingspan_cm:130,beak_length_mm:175,beak_curvature:0,beak_type:"spatulate",
+ diet:"omnivore",habitat:["wetland","mangrove","lagoons"],region:["Americas"],
+ altitude_min:0,altitude_max:500,migration:"partial",
+ lifespan_years:10,clutch_size:3,eggs_per_year:1,incubation_days:23,
+ heart_rate_bpm:210,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["wetland_loss","mercury"],
+ convergent_with:["Greater Flamingo"],
+ philosophy:"Sweeps its flattened, spoon-shaped bill side to side through shallow water, snapping shut by touch alone the instant it contacts prey — feeding entirely by feel, often in murky water where vision is useless. Its pink coloration, like the flamingo's, comes from carotenoids in crustacean prey — two unrelated families converging on the same pigment source for the same hue."},
+
+{id:71,name:"Western Grebe",scientific:"Aechmophorus occidentalis",family:"Waterbirds",
+ mass_g:1300,wingspan_cm:90,beak_length_mm:70,beak_curvature:0,beak_type:"spear-thin",
+ diet:"piscivore",habitat:["lakes"],region:["North America"],
+ altitude_min:0,altitude_max:2000,migration:"partial",
+ lifespan_years:8,clutch_size:3,eggs_per_year:1,incubation_days:24,
+ heart_rate_bpm:230,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["wetland_loss","oil_spills"],
+ convergent_with:["Common Loon"],
+ philosophy:"Famous for its 'rushing' courtship display — pairs rear up and run side-by-side across the water's surface at speed, bodies nearly vertical, in perfect synchrony for up to 20 meters. Its legs are positioned so far back on its body (ideal for swimming) that it can barely walk on land, and nests are built as floating platforms anchored to vegetation — a life almost entirely divorced from solid ground."},
+
+{id:72,name:"Canada Goose",scientific:"Branta canadensis",family:"Waterbirds",
+ mass_g:4500,wingspan_cm:150,beak_length_mm:50,beak_curvature:0,beak_type:"flat-broad",
+ diet:"herbivore",habitat:["lakes","grassland","urban-parks"],region:["North America"],
+ altitude_min:0,altitude_max:3000,migration:"partial",
+ lifespan_years:24,clutch_size:5,eggs_per_year:1,incubation_days:28,
+ heart_rate_bpm:200,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:[],
+ convergent_with:[],
+ philosophy:"Flies in V-formation, with each bird positioned to catch the upwash from the wingtip vortex of the bird ahead — a formation that can reduce energy expenditure by an estimated 20-30%. Birds rotate the lead position, sharing the cost of breaking the air. A literal aerodynamic cooperative, visible from the ground every autumn."},
+
+/* ═══════════ SEABIRDS (10) — Open ocean specialists ═══════════
+   The longest-lived, furthest-ranging birds —
+   life lived mostly out of sight of land. */
+
+{id:73,name:"Wandering Albatross",scientific:"Diomedea exulans",family:"Seabirds",
+ mass_g:9000,wingspan_cm:340,beak_length_mm:140,beak_curvature:1,beak_type:"hooked-thick",
+ diet:"piscivore",habitat:["open-ocean"],region:["Southern Ocean"],
+ altitude_min:0,altitude_max:0,migration:"long_distance",
+ lifespan_years:60,clutch_size:1,eggs_per_year:0.5,incubation_days:78,
+ heart_rate_bpm:90,metabolic_rate:"low",torpor:false,
+ iucn_status:"VU",population_trend:"decreasing",threats:["longline_fishing","plastic_pollution"],
+ convergent_with:[],
+ philosophy:"Has the longest wingspan of any living bird — up to 3.5 meters — and can circumnavigate the Southern Ocean in as little as 46 days, locking its wings via a tendon mechanism that lets it glide for hours without a single muscle contraction. Breeds only every other year, raising one chick over a year-long cycle, and individuals can live past 60. A life measured in decades and tens of thousands of kilometers, threatened mostly by a single hook on a longline."},
+
+{id:74,name:"Atlantic Puffin",scientific:"Fratercula arctica",family:"Seabirds",
+ mass_g:480,wingspan_cm:55,beak_length_mm:45,beak_curvature:1.5,beak_type:"deep-triangular",
+ diet:"piscivore",habitat:["cliffs","open-ocean"],region:["North Atlantic"],
+ altitude_min:0,altitude_max:0,migration:"long_distance",
+ lifespan_years:25,clutch_size:1,eggs_per_year:1,incubation_days:42,
+ heart_rate_bpm:280,metabolic_rate:"medium",torpor:false,
+ iucn_status:"VU",population_trend:"decreasing",threats:["fish_stock_decline","climate_change"],
+ convergent_with:[],
+ philosophy:"Its wings are a compromise structure — short and stiff enough for 'flying' underwater (it can dive to 60m using them like flippers), but inefficient in air, requiring up to 400 wingbeats per minute just to stay aloft. The same body part doing two jobs, neither perfectly, both adequately — a recurring theme in diving birds."},
+
+{id:75,name:"Emperor Penguin",scientific:"Aptenodytes forsteri",family:"Seabirds",
+ mass_g:28000,wingspan_cm:0,beak_length_mm:80,beak_curvature:0.5,beak_type:"spear-thin",
+ diet:"piscivore",habitat:["antarctic-ice","open-ocean"],region:["Antarctica"],
+ altitude_min:0,altitude_max:0,migration:"resident",
+ lifespan_years:20,clutch_size:1,eggs_per_year:1,incubation_days:65,
+ heart_rate_bpm:60,metabolic_rate:"low",torpor:false,
+ iucn_status:"NT",population_trend:"decreasing",threats:["sea_ice_loss","climate_change"],
+ convergent_with:[],
+ philosophy:"The male incubates the single egg balanced on his feet under a fold of skin for over two months through the Antarctic winter, fasting the entire time and losing up to 45% of his body weight, huddling with thousands of other males in a slow-rotating mass where individuals take turns at the freezing perimeter. Wings became flippers generations ago — flight traded entirely for the ability to 'fly' through water at depths over 500 meters."},
+
+{id:76,name:"Brown Pelican",scientific:"Pelecanus occidentalis",family:"Seabirds",
+ mass_g:3600,wingspan_cm:213,beak_length_mm:280,beak_curvature:0.5,beak_type:"pouch-spear",
+ diet:"piscivore",habitat:["coasts"],region:["Americas"],
+ altitude_min:0,altitude_max:0,migration:"partial",
+ lifespan_years:25,clutch_size:3,eggs_per_year:1,incubation_days:30,
+ heart_rate_bpm:170,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["pesticides_historic","oil_spills"],
+ convergent_with:[],
+ philosophy:"The only pelican that plunge-dives from heights up to 20m, folding into an S-shape and hitting the water at speed — its throat pouch can hold up to 11 liters, three times the capacity of its stomach. Nearly driven to extinction by DDT (which thinned eggshells until parents crushed their own eggs while incubating), it became one of the first species protected under the US Endangered Species Act, and was delisted in 2009 — a near-complete recovery."},
+
+{id:77,name:"Magnificent Frigatebird",scientific:"Fregata magnificens",family:"Seabirds",
+ mass_g:1500,wingspan_cm:230,beak_length_mm:100,beak_curvature:2.5,beak_type:"hooked-thin",
+ diet:"piscivore",habitat:["tropical-coasts","open-ocean"],region:["Americas"],
+ altitude_min:0,altitude_max:0,migration:"resident",
+ lifespan_years:35,clutch_size:1,eggs_per_year:0.5,incubation_days:55,
+ heart_rate_bpm:130,metabolic_rate:"low",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_disturbance"],
+ convergent_with:[],
+ philosophy:"Has the largest wing-area-to-body-weight ratio of any bird, letting it stay aloft for weeks without landing — yet its feathers aren't waterproof, so it can never land on water without risking drowning. It survives by stealing food from other seabirds in mid-air (kleptoparasitism) and snatching flying fish directly from the surface without ever touching down. An entire life lived in a single medium, by necessity rather than choice."},
+
+{id:78,name:"Northern Gannet",scientific:"Morus bassanus",family:"Seabirds",
+ mass_g:3200,wingspan_cm:180,beak_length_mm:100,beak_curvature:0.5,beak_type:"spear-thick",
+ diet:"piscivore",habitat:["cliffs","open-ocean"],region:["North Atlantic"],
+ altitude_min:0,altitude_max:0,migration:"partial",
+ lifespan_years:25,clutch_size:1,eggs_per_year:1,incubation_days:44,
+ heart_rate_bpm:180,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["avian_flu","fishing_bycatch"],
+ convergent_with:[],
+ philosophy:"Plunge-dives from up to 30m at speeds reaching 100km/h, hitting the water with forces that would concuss most animals — survivable thanks to internal air sacs in the face and chest that cushion the impact like built-in airbags. It also lacks external nostrils, sealed shut, to prevent water being forced into its skull at high speed."},
+
+{id:79,name:"Arctic Tern",scientific:"Sterna paradisaea",family:"Seabirds",
+ mass_g:110,wingspan_cm:80,beak_length_mm:35,beak_curvature:0.3,beak_type:"spear-thin",
+ diet:"piscivore",habitat:["arctic-coasts","open-ocean"],region:["Arctic to Antarctic"],
+ altitude_min:0,altitude_max:0,migration:"long_distance",
+ lifespan_years:30,clutch_size:2,eggs_per_year:1,incubation_days:22,
+ heart_rate_bpm:350,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["climate_change","fish_decline"],
+ convergent_with:[],
+ philosophy:"Migrates from Arctic breeding grounds to Antarctic waters and back every year — roughly 70,000km round trip, the longest annual migration of any animal. Over a 30-year lifespan, this totals more than 2 million km, equivalent to three round trips to the Moon. It experiences more daylight per year than any other creature on Earth, chasing summer across both poles."},
+
+{id:80,name:"Royal Albatross",scientific:"Diomedea epomophora",family:"Seabirds",
+ mass_g:8500,wingspan_cm:300,beak_length_mm:140,beak_curvature:1,beak_type:"hooked-thick",
+ diet:"piscivore",habitat:["open-ocean"],region:["Southern Ocean"],
+ altitude_min:0,altitude_max:0,migration:"long_distance",
+ lifespan_years:60,clutch_size:1,eggs_per_year:0.5,incubation_days:79,
+ heart_rate_bpm:90,metabolic_rate:"low",torpor:false,
+ iucn_status:"VU",population_trend:"stable",threats:["longline_fishing","invasive_predators"],
+ convergent_with:["Wandering Albatross"],
+ philosophy:"Pairs perform an elaborate, years-long courtship dance before their first breeding attempt — a 'language' of synchronized postures and calls that young birds practice and refine over multiple seasons before settling on a lifelong mate. Once paired, partners may not see each other for months while each forages separately across thousands of kilometers of ocean, reuniting at the same nest site with apparent precision."},
+
+{id:81,name:"Great Cormorant",scientific:"Phalacrocorax carbo",family:"Seabirds",
+ mass_g:2500,wingspan_cm:145,beak_length_mm:65,beak_curvature:2.5,beak_type:"hooked-thin",
+ diet:"piscivore",habitat:["coasts","lakes","rivers"],region:["worldwide"],
+ altitude_min:0,altitude_max:1500,migration:"partial",
+ lifespan_years:11,clutch_size:4,eggs_per_year:1,incubation_days:28,
+ heart_rate_bpm:200,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:["persecution_by_fisheries"],
+ convergent_with:["Anhinga"],
+ philosophy:"Like the anhinga, has reduced waterproofing on its feathers — a trait that aids underwater pursuit but requires the iconic wings-spread drying posture seen on rocks and pilings worldwide. In parts of Asia, this species has been used by fishermen for over a thousand years: a ring placed around the neck stops the bird swallowing larger fish, which it then surrenders to its handler — one of the oldest documented forms of human-animal cooperative hunting."},
+
+{id:82,name:"Adelie Penguin",scientific:"Pygoscelis adeliae",family:"Seabirds",
+ mass_g:4500,wingspan_cm:0,beak_length_mm:40,beak_curvature:0.5,beak_type:"spear-thin",
+ diet:"piscivore",habitat:["antarctic-ice","open-ocean"],region:["Antarctica"],
+ altitude_min:0,altitude_max:0,migration:"partial",
+ lifespan_years:16,clutch_size:2,eggs_per_year:1,incubation_days:35,
+ heart_rate_bpm:80,metabolic_rate:"low",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["sea_ice_loss","krill_decline"],
+ convergent_with:["Emperor Penguin"],
+ philosophy:"Builds nests from piles of small stones — in a colony of thousands, stone theft between neighboring pairs is constant and can comprise a significant part of each bird's daily activity budget. Long-term monitoring of Adelie colonies has become one of the most sensitive indicators of Antarctic ecosystem change, since their breeding success tracks sea-ice extent and krill abundance with remarkable precision — a feathered seismograph for climate change."},
+
+/* ═══════════ PARROTS (10) — Psittaciformes ═══════════
+   The primates of the bird world: long-lived,
+   social, playful, and unsettlingly intelligent. */
+
+{id:83,name:"African Grey Parrot",scientific:"Psittacus erithacus",family:"Parrots",
+ mass_g:450,wingspan_cm:65,beak_length_mm:35,beak_curvature:4,beak_type:"hooked-thick",
+ diet:"frugivore",habitat:["lowland-forest"],region:["Africa"],
+ altitude_min:0,altitude_max:2200,migration:"resident",
+ lifespan_years:50,clutch_size:3,eggs_per_year:1,incubation_days:28,
+ heart_rate_bpm:200,metabolic_rate:"medium",torpor:false,
+ iucn_status:"EN",population_trend:"decreasing",threats:["wildlife_trade","deforestation"],
+ song_complexity:"extreme",song_repertoire:null,brain_relative:"very_large",
+ convergent_with:[],
+ philosophy:"Subject of the longest-running formal study of animal cognition outside primates — one famous individual (Alex, studied for 30 years) demonstrated understanding of concepts like 'same/different,' zero, and could combine words to describe novel objects ('banerry' for apple, blending banana and cherry). Wild populations have crashed by over 90% in parts of its range due to capture for the pet trade — the very intelligence that fascinates us has driven its decline."},
+
+{id:84,name:"Hyacinth Macaw",scientific:"Anodorhynchus hyacinthinus",family:"Parrots",
+ mass_g:1500,wingspan_cm:120,beak_length_mm:90,beak_curvature:5,beak_type:"hooked-massive",
+ diet:"granivore",habitat:["palm-savanna","forest"],region:["South America"],
+ altitude_min:0,altitude_max:500,migration:"resident",
+ lifespan_years:50,clutch_size:2,eggs_per_year:1,incubation_days:29,
+ heart_rate_bpm:150,metabolic_rate:"medium",torpor:false,
+ iucn_status:"VU",population_trend:"stable",threats:["wildlife_trade","habitat_loss"],
+ song_complexity:"medium",song_repertoire:null,brain_relative:"very_large",
+ convergent_with:[],
+ philosophy:"The largest flying parrot, with a bite force estimated near 150kg per square centimeter — strong enough to crack the hardest palm nuts on Earth (Acrocomia and Lithraea palms), which most other animals cannot open at all. Its entire diet, in some regions, depends on the seed pods one or two specific palm species drop after passing through the digestive tract of cattle — an ecological dependency chain involving a bird, a tree, and an introduced mammal."},
+
+{id:85,name:"Kakapo",scientific:"Strigops habroptilus",family:"Parrots",
+ mass_g:2000,wingspan_cm:0,beak_length_mm:30,beak_curvature:3,beak_type:"hooked-thick",
+ diet:"herbivore",habitat:["forest"],region:["New Zealand"],
+ altitude_min:0,altitude_max:1500,migration:"resident",
+ lifespan_years:90,clutch_size:2,eggs_per_year:0.3,incubation_days:30,
+ heart_rate_bpm:100,metabolic_rate:"low",torpor:false,
+ iucn_status:"CR",population_trend:"increasing",threats:["introduced_predators","tiny_population"],
+ song_complexity:"low",song_repertoire:null,brain_relative:"large",
+ convergent_with:[],
+ philosophy:"The world's only flightless parrot, and possibly the longest-lived bird, with individuals estimated to live past 90 years. Males call females from booming chambers dug into hillsides, producing infrasound that can carry over 5km — but breeds only in years when native rimu trees mast (fruit heavily), which happens just once every 2-4 years. With a global population around 250 individuals, every single bird is named and tracked — perhaps the most intensively-managed wild species on the planet."},
+
+{id:86,name:"Budgerigar",scientific:"Melopsittacus undulatus",family:"Parrots",
+ mass_g:35,wingspan_cm:30,beak_length_mm:12,beak_curvature:3,beak_type:"hooked-small",
+ diet:"granivore",habitat:["arid-grassland","scrub"],region:["Australia"],
+ altitude_min:0,altitude_max:1000,migration:"partial",
+ lifespan_years:8,clutch_size:5,eggs_per_year:2,incubation_days:18,
+ heart_rate_bpm:400,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:[],
+ song_complexity:"high",song_repertoire:null,brain_relative:"large",
+ convergent_with:[],
+ philosophy:"In the wild, forms nomadic flocks of thousands that follow erratic rainfall across Australia's interior — breeding opportunistically whenever rain triggers grass seed production, sometimes within weeks of a downpour. The most popular pet bird in the world is, in its natural state, a boom-bust desert nomad whose entire life schedule is dictated by unpredictable weather thousands of kilometers wide."},
+
+{id:87,name:"Sulphur-crested Cockatoo",scientific:"Cacatua galerita",family:"Parrots",
+ mass_g:900,wingspan_cm:100,beak_length_mm:50,beak_curvature:4,beak_type:"hooked-thick",
+ diet:"omnivore",habitat:["forest","urban","farmland"],region:["Australia","New Guinea"],
+ altitude_min:0,altitude_max:2000,migration:"resident",
+ lifespan_years:70,clutch_size:3,eggs_per_year:1,incubation_days:28,
+ heart_rate_bpm:180,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["persecution_as_pest"],
+ song_complexity:"medium",song_repertoire:null,brain_relative:"very_large",
+ convergent_with:[],
+ philosophy:"In Sydney, populations have learned — and culturally transmitted across the city — the technique of opening household garbage bin lids using their beak and feet, a behavior that spread between suburbs at a pace consistent with social learning rather than independent invention each time. A wild parrot developing 'culture' in real time, observable through citizen science."},
+
+{id:88,name:"Scarlet Macaw",scientific:"Ara macao",family:"Parrots",
+ mass_g:1000,wingspan_cm:105,beak_length_mm:65,beak_curvature:4.5,beak_type:"hooked-thick",
+ diet:"frugivore",habitat:["lowland-rainforest"],region:["Central America","South America"],
+ altitude_min:0,altitude_max:1500,migration:"resident",
+ lifespan_years:50,clutch_size:3,eggs_per_year:1,incubation_days:28,
+ heart_rate_bpm:170,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["wildlife_trade","habitat_loss"],
+ song_complexity:"medium",song_repertoire:null,brain_relative:"very_large",
+ convergent_with:[],
+ philosophy:"Regularly eats clay from exposed riverbank cliffs ('clay licks'), in gatherings of dozens to hundreds of birds — the clay is thought to bind toxic compounds (tannins, alkaloids) found in the unripe seeds that make up much of its diet, functioning as a natural antidote that lets it eat foods other animals cannot safely digest."},
+
+{id:89,name:"Kea",scientific:"Nestor notabilis",family:"Parrots",
+ mass_g:900,wingspan_cm:90,beak_length_mm:55,beak_curvature:5,beak_type:"hooked-curved-long",
+ diet:"omnivore",habitat:["alpine","mountains"],region:["New Zealand"],
+ altitude_min:600,altitude_max:2000,migration:"resident",
+ lifespan_years:20,clutch_size:4,eggs_per_year:1,incubation_days:24,
+ heart_rate_bpm:200,metabolic_rate:"medium",torpor:false,
+ iucn_status:"EN",population_trend:"decreasing",threats:["introduced_predators","lead_poisoning"],
+ song_complexity:"medium",song_repertoire:null,brain_relative:"very_large",
+ convergent_with:[],
+ philosophy:"The world's only alpine parrot, found in snow at altitudes that would seem to suit eagles more than parrots. Famous (and notorious) for dismantling rubber seals, windscreen wipers, and ski equipment from cars and tents — apparently out of pure curiosity rather than any food motivation. In lab studies, keas display 'contagious play': hearing the warbling call of another kea playing causes nearby birds to spontaneously start playing too — something close to a laughter response."},
+
+{id:90,name:"Eclectus Parrot",scientific:"Eclectus roratus",family:"Parrots",
+ mass_g:450,wingspan_cm:50,beak_length_mm:40,beak_curvature:4,beak_type:"hooked-thick",
+ diet:"frugivore",habitat:["lowland-forest"],region:["New Guinea","Australia","Indonesia"],
+ altitude_min:0,altitude_max:1000,migration:"resident",
+ lifespan_years:40,clutch_size:2,eggs_per_year:1,incubation_days:28,
+ heart_rate_bpm:190,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["wildlife_trade","habitat_loss"],
+ song_complexity:"medium",song_repertoire:null,brain_relative:"large",
+ convergent_with:[],
+ philosophy:"Males are bright green, females are bright red and purple — a difference so extreme that for over a century, the two sexes were classified as entirely different species. Females compete fiercely for the relatively scarce nesting hollows and may occupy the same tree cavity for years, while males travel between multiple females' territories — a rare reversal of the typical pattern where males are flashier and females drab."},
+
+{id:91,name:"Rainbow Lorikeet",scientific:"Trichoglossus moluccanus",family:"Parrots",
+ mass_g:130,wingspan_cm:45,beak_length_mm:25,beak_curvature:4,beak_type:"hooked-thin",
+ diet:"nectarivore",habitat:["forest","urban","gardens"],region:["Australia"],
+ altitude_min:0,altitude_max:1500,migration:"partial",
+ lifespan_years:20,clutch_size:2,eggs_per_year:2,incubation_days:25,
+ heart_rate_bpm:300,metabolic_rate:"high",torpor:false,
+ iucn_status:"LC",population_trend:"increasing",threats:[],
+ song_complexity:"medium",song_repertoire:null,brain_relative:"large",
+ convergent_with:["Crimson Sunbird","Ruby-throated Hummingbird"],
+ philosophy:"Has a tongue tipped with a brush of fine hair-like papillae, used to mop up nectar and pollen from flowers — yet another, wholly different solution (a mop, rather than a tube or pump) to the same nectar-feeding problem solved separately by hummingbirds and sunbirds. A parrot doing a hummingbird's job, with parrot anatomy."},
+
+{id:92,name:"Palm Cockatoo",scientific:"Probosciger aterrimus",family:"Parrots",
+ mass_g:1100,wingspan_cm:100,beak_length_mm:80,beak_curvature:5,beak_type:"hooked-massive",
+ diet:"granivore",habitat:["rainforest"],region:["New Guinea","Australia"],
+ altitude_min:0,altitude_max:1000,migration:"resident",
+ lifespan_years:60,clutch_size:1,eggs_per_year:0.5,incubation_days:30,
+ heart_rate_bpm:160,metabolic_rate:"medium",torpor:false,
+ iucn_status:"VU",population_trend:"decreasing",threats:["habitat_loss","slow_reproduction"],
+ song_complexity:"medium",song_repertoire:null,brain_relative:"very_large",
+ convergent_with:[],
+ philosophy:"One of very few non-human animals known to manufacture and use a percussion instrument — males break off a stick, trim it to a preferred shape with their beak, and drum it against a hollow tree in a rhythmic display to attract females, with individual birds maintaining consistent personal 'drumming styles.' Breeds at most once every two years, one of the slowest reproductive rates of any parrot, leaving populations extremely vulnerable to any habitat disturbance."},
+
+/* ═══════════ SHOREBIRDS (8) — Migration extremists ═══════════
+   Small bodies, vast journeys — the longest
+   non-stop flights of any animal on Earth. */
+
+{id:93,name:"Bar-tailed Godwit",scientific:"Limosa lapponica",family:"Shorebirds",
+ mass_g:400,wingspan_cm:75,beak_length_mm:100,beak_curvature:1,beak_type:"upcurved-long",
+ diet:"insectivore",habitat:["mudflats","tundra"],region:["worldwide-migrant"],
+ altitude_min:0,altitude_max:1000,migration:"long_distance",
+ lifespan_years:16,clutch_size:4,eggs_per_year:1,incubation_days:21,
+ heart_rate_bpm:300,metabolic_rate:"medium",torpor:false,
+ iucn_status:"NT",population_trend:"decreasing",threats:["habitat_loss_stopover_sites"],
+ convergent_with:[],
+ philosophy:"Holds the record for the longest non-stop flight of any bird — a tagged individual flew over 13,500km from Alaska to Australia/New Zealand in roughly 11 days without landing, eating, or drinking once. Before departure it nearly doubles its body weight in fat, and its digestive organs actually shrink to reduce dead weight, only regrowing after arrival. The body itself is temporarily remodeled for the journey."},
+
+{id:94,name:"Sanderling",scientific:"Calidris alba",family:"Shorebirds",
+ mass_g:55,wingspan_cm:40,beak_length_mm:25,beak_curvature:0.3,beak_type:"straight-thin",
+ diet:"insectivore",habitat:["sandy-beaches"],region:["worldwide-migrant"],
+ altitude_min:0,altitude_max:500,migration:"long_distance",
+ lifespan_years:14,clutch_size:4,eggs_per_year:1,incubation_days:27,
+ heart_rate_bpm:450,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["beach_disturbance","habitat_loss"],
+ convergent_with:[],
+ philosophy:"The familiar 'wave-chasing' bird of sandy beaches worldwide — running back and forth with the surf to feed on tiny invertebrates exposed by retreating waves, a foraging rhythm timed to the ocean's own rhythm. It's the only sandpiper that completely lacks a hind toe, an adaptation for running on this specific, ever-shifting substrate."},
+
+{id:95,name:"American Oystercatcher",scientific:"Haematopus palliatus",family:"Shorebirds",
+ mass_g:550,wingspan_cm:80,beak_length_mm:85,beak_curvature:0,beak_type:"chisel-flat",
+ diet:"carnivore",habitat:["coasts","mudflats"],region:["Americas"],
+ altitude_min:0,altitude_max:0,migration:"partial",
+ lifespan_years:17,clutch_size:3,eggs_per_year:1,incubation_days:27,
+ heart_rate_bpm:280,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"stable",threats:["habitat_disturbance","sea_level_rise"],
+ convergent_with:[],
+ philosophy:"Despite its name, eats far more mussels and clams than oysters — using one of two distinct beak techniques learned individually, not instinctively: 'stabbers' wedge the bill between shell valves and sever the muscle, while 'hammerers' simply smash the shell open. Each bird specializes in one technique, develops a correspondingly worn beak shape, and chicks learn their technique by watching their parent — a rare case of tool-use-like specialization passed down culturally in a shorebird."},
+
+{id:96,name:"Ruddy Turnstone",scientific:"Arenaria interpres",family:"Shorebirds",
+ mass_g:110,wingspan_cm:53,beak_length_mm:25,beak_curvature:0.3,beak_type:"chisel-thin",
+ diet:"omnivore",habitat:["rocky-coasts","mudflats"],region:["worldwide-migrant"],
+ altitude_min:0,altitude_max:1000,migration:"long_distance",
+ lifespan_years:14,clutch_size:4,eggs_per_year:1,incubation_days:23,
+ heart_rate_bpm:350,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["horseshoe_crab_decline"],
+ convergent_with:[],
+ philosophy:"Named for its habit of flipping stones, shells, and seaweed with its short, slightly upturned bill to expose hidden invertebrates — a foraging method requiring real physical strength relative to its size. Some populations have become critically dependent on a single, narrow stopover window: the precisely-timed mass spawning of horseshoe crabs in Delaware Bay, whose eggs provide the fuel for the next leg of migration."},
+
+{id:97,name:"Eurasian Curlew",scientific:"Numenius arquata",family:"Shorebirds",
+ mass_g:900,wingspan_cm:100,beak_length_mm:140,beak_curvature:3,beak_type:"strongly-decurved",
+ diet:"insectivore",habitat:["mudflats","moorland","grassland"],region:["Europe","Asia","Africa"],
+ altitude_min:0,altitude_max:2000,migration:"long_distance",
+ lifespan_years:32,clutch_size:4,eggs_per_year:1,incubation_days:29,
+ heart_rate_bpm:250,metabolic_rate:"medium",torpor:false,
+ iucn_status:"NT",population_trend:"decreasing",threats:["agricultural_intensification","predation"],
+ convergent_with:[],
+ philosophy:"Its long, downcurved bill has a flexible, sensitive tip that can open slightly while buried deep in mud — allowing it to grasp a worm several centimeters underground without having to extract the whole bill first. Europe's largest wading bird, its haunting call has long been associated in folklore with loss and mourning, and its real-world decline across farmland landscapes has made that association newly literal."},
+
+{id:98,name:"Killdeer",scientific:"Charadrius vociferus",family:"Shorebirds",
+ mass_g:95,wingspan_cm:60,beak_length_mm:20,beak_curvature:0.3,beak_type:"straight-thin",
+ diet:"insectivore",habitat:["grassland","farmland","gravel-areas"],region:["North America"],
+ altitude_min:0,altitude_max:3000,migration:"partial",
+ lifespan_years:11,clutch_size:4,eggs_per_year:2,incubation_days:25,
+ heart_rate_bpm:380,metabolic_rate:"medium",torpor:false,
+ iucn_status:"LC",population_trend:"decreasing",threats:["agricultural_change"],
+ convergent_with:[],
+ philosophy:"Famous for its 'broken-wing display' — when a predator approaches its ground nest, the adult drags one wing as if injured, drawing the predator away in pursuit of an easy meal, then suddenly 'recovers' and flies off once the threat is far enough away. A theatrical performance, repeated identically across the entire species, that has no learning component — pure instinct, indistinguishable from acting."},
+
+{id:99,name:"Red Knot",scientific:"Calidris canutus",family:"Shorebirds",
+ mass_g:135,wingspan_cm:57,beak_length_mm:35,beak_curvature:0.5,beak_type:"straight-thin",
+ diet:"insectivore",habitat:["mudflats","tundra"],region:["worldwide-migrant"],
+ altitude_min:0,altitude_max:1000,migration:"long_distance",
+ lifespan_years:20,clutch_size:4,eggs_per_year:1,incubation_days:22,
+ heart_rate_bpm:330,metabolic_rate:"medium",torpor:false,
+ iucn_status:"NT",population_trend:"decreasing",threats:["horseshoe_crab_decline","habitat_loss"],
+ convergent_with:["Bar-tailed Godwit"],
+ philosophy:"One subspecies (rufa) migrates from the southern tip of South America to the Canadian Arctic, with its entire population funneling through Delaware Bay in a precisely-timed two-week window to feast on horseshoe crab eggs — without which they cannot gain enough weight to complete the journey or breed successfully. The fate of an Arctic-breeding bird is bound to a 450-million-year-old marine arthropod on a single bay on the US east coast."},
+
+{id:100,name:"Northern Lapwing",scientific:"Vanellus vanellus",family:"Shorebirds",
+ mass_g:230,wingspan_cm:85,beak_length_mm:25,beak_curvature:0.3,beak_type:"straight-thin",
+ diet:"insectivore",habitat:["farmland","grassland","wetland"],region:["Europe","Asia"],
+ altitude_min:0,altitude_max:2000,migration:"partial",
+ lifespan_years:24,clutch_size:4,eggs_per_year:1,incubation_days:28,
+ heart_rate_bpm:280,metabolic_rate:"medium",torpor:false,
+ iucn_status:"NT",population_trend:"decreasing",threats:["agricultural_intensification"],
+ convergent_with:[],
+ philosophy:"Its rounded wings produce a distinctive, wheezy 'throbbing' sound in flight — audible from far away — used in tumbling, acrobatic display flights over breeding territory. Once one of Europe's commonest farmland birds, populations have declined by over 50% in many countries as agriculture shifted from spring-sown to autumn-sown crops, removing the bare, open ground this species needs for nesting — a decline driven not by any single dramatic event, but by a quiet shift in farming calendars."},
+
+];
+
+/* ════════════════════════════════════════════════════════════
+   FAMILY METADATA — colors, descriptions
+   ════════════════════════════════════════════════════════════ */
+const FAMILY_INFO = {
+  "Hummingbirds": {color:"#e8b84b", icon:"⚡", desc:"The fastest metabolisms on Earth — small size unlocks strategies impossible at scale."},
+  "Raptors": {color:"#c87941", icon:"🦅", desc:"Apex predators of the air, from sparrow-sized owls to condors with 3m wingspans."},
+  "Songbirds": {color:"#7bc67e", icon:"🎵", desc:"Half of all bird species. The family that learned to learn — vocal culture and dense minds."},
+  "Waterbirds": {color:"#4a7fa5", icon:"🌊", desc:"Bodies built for an interface — half submerged, half airborne."},
+  "Seabirds": {color:"#8aa9c4", icon:"🌐", desc:"The longest-lived, furthest-ranging birds — life lived mostly out of sight of land."},
+  "Parrots": {color:"#d65d8a", icon:"🧠", desc:"The primates of the bird world: long-lived, social, playful, unsettlingly intelligent."},
+  "Shorebirds": {color:"#c9a876", icon:"📍", desc:"Migration extremists — the longest non-stop flights of any animal on Earth."}
+};
+
+/* ════════════════════════════════════════════════════════════
+   STRATEGY CURVES — for life-history overlays
+   ════════════════════════════════════════════════════════════ */
+const STRATEGY_NOTES = {
+  r_strategy: "Many offspring, short lives, high mortality — bet on quantity. (e.g. House Sparrow, Common Cuckoo)",
+  k_strategy: "Few offspring, long lives, high parental investment — bet on quality. (e.g. Albatrosses, Kakapo)"
+};
+
+</script>
+<script>
+/* ════════════════════════════════════════════════════════════
+   BIRD STRATEGY EXPLORER — APP LOGIC
+   Made with Love : Matthew Abraham
+   ════════════════════════════════════════════════════════════ */
+
+const COLORS = {
+  family: { Hummingbirds:"#e8b84b", Raptors:"#c87941", Songbirds:"#7bc67e",
+            Waterbirds:"#4a7fa5", Seabirds:"#8aa9c4", Parrots:"#d65d8a", Shorebirds:"#c9a876" },
+  diet: { nectarivore:"#e8b84b", insectivore:"#7bc67e", carnivore:"#d65d5d",
+          piscivore:"#4a7fa5", granivore:"#c9a876", frugivore:"#d65d8a",
+          omnivore:"#8aa9c4", scavenger:"#c87941", "filter-feeder":"#9b6fd1", herbivore:"#6fbf73" },
+  migration: { resident:"#7bc67e", partial:"#e8b84b", long_distance:"#d65d5d" },
+  iucn_status: { LC:"#7bc67e", NT:"#e8b84b", VU:"#c87941", EN:"#d65d8a", CR:"#d65d5d" }
+};
+const IUCN_LABELS = { LC:"Least Concern", NT:"Near Threatened", VU:"Vulnerable", EN:"Endangered", CR:"Critically Endangered" };
+const TRAIT_LABELS = {
+  mass_g:"Body Mass (g)", wingspan_cm:"Wingspan (cm)", beak_length_mm:"Beak Length (mm)",
+  beak_curvature:"Beak Curvature", lifespan_years:"Lifespan (years)", clutch_size:"Clutch Size",
+  eggs_per_year:"Eggs per Year", incubation_days:"Incubation (days)", heart_rate_bpm:"Heart Rate (bpm)",
+  altitude_max:"Max Altitude (m)"
+};
+
+let journal = {}; // { birdId: { fav: bool, note: string } }
+
+/* ════════════════════════════════════════════════════════════
+   BACKGROUND BUBBLES
+   ════════════════════════════════════════════════════════════ */
+function spawnBgBubbles(){
+  const container = document.getElementById('bg-bubbles');
+  const count = window.innerWidth < 600 ? 12 : 22;
+  for(let i=0;i<count;i++){
+    const b = document.createElement('div');
+    b.className = 'bg-bubble';
+    const size = 20 + Math.random()*90;
+    b.style.width = size+'px';
+    b.style.height = size+'px';
+    b.style.left = (Math.random()*100)+'%';
+    const dur = 18 + Math.random()*22;
+    b.style.animationDuration = dur+'s';
+    b.style.animationDelay = (-Math.random()*dur)+'s';
+    container.appendChild(b);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   MODE TAB SWITCHING
+   ════════════════════════════════════════════════════════════ */
+function initModeTabs(){
+  document.querySelectorAll('.mode-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.mode-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.mode-panel').forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('mode-'+tab.dataset.mode).classList.add('active');
+      hideDetail();
+      // redraw canvases on tab switch (in case container resized while hidden)
+      requestAnimationFrame(()=>{
+        if(tab.dataset.mode==='morphospace') drawMorphospace();
+        if(tab.dataset.mode==='lifehistory') drawLifeHistory();
+        if(tab.dataset.mode==='anatomy') drawAnatomy();
+        if(tab.dataset.mode==='conservation') drawConservation();
+      });
+    });
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   SHARED DETAIL CARD
+   ════════════════════════════════════════════════════════════ */
+function showDetail(bird){
+  const card = document.getElementById('detail-card');
+  const fam = FAMILY_INFO[bird.family];
+  const isFav = journal[bird.id]?.fav;
+
+  let statsHtml = `
+    <div class="stat-box"><div class="val">${bird.mass_g < 1000 ? bird.mass_g+'g' : (bird.mass_g/1000).toFixed(1)+'kg'}</div><div class="lbl">Mass</div></div>
+    <div class="stat-box"><div class="val">${bird.wingspan_cm>0?bird.wingspan_cm+'cm':'—'}</div><div class="lbl">Wingspan</div></div>
+    <div class="stat-box"><div class="val">${bird.beak_length_mm}mm</div><div class="lbl">Beak Length</div></div>
+    <div class="stat-box"><div class="val">${bird.lifespan_years}y</div><div class="lbl">Lifespan</div></div>
+    <div class="stat-box"><div class="val">${bird.clutch_size}</div><div class="lbl">Clutch Size</div></div>
+    <div class="stat-box"><div class="val">${bird.heart_rate_bpm}</div><div class="lbl">Heart Rate (bpm)</div></div>
+    <div class="stat-box"><div class="val">${bird.incubation_days}d</div><div class="lbl">Incubation</div></div>
+    <div class="stat-box"><div class="val">${bird.altitude_max>0?bird.altitude_max+'m':'Sea level'}</div><div class="lbl">Max Altitude</div></div>
+  `;
+
+  let convergentHtml = '';
+  if(bird.convergent_with && bird.convergent_with.length){
+    convergentHtml = `<div class="convergent-row">🔗 <b>Convergent with:</b> ${bird.convergent_with.join(', ')} — different lineages, same solution.</div>`;
+  }
+
+  card.innerHTML = `
+    <div class="detail-head">
+      <div>
+        <h3>${bird.name}</h3>
+        <div class="sci">${bird.scientific}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="detail-family-badge" style="background:${fam.color}22;color:${fam.color};border:1px solid ${fam.color}55;">
+          ${fam.icon} ${bird.family}
+        </span>
+        <button class="fav-star ${isFav?'active':''}" onclick="toggleFavorite(${bird.id})" title="Save to journal">★</button>
+        <button class="close-detail" onclick="hideDetail()">✕</button>
+      </div>
+    </div>
+    <div class="detail-stats">${statsHtml}</div>
+    <div class="detail-philosophy">${bird.philosophy}</div>
+    <div class="detail-tags">
+      <span class="tag">${bird.diet.replace('_',' ')}</span>
+      <span class="tag">${bird.migration.replace('_',' ')}</span>
+      <span class="tag iucn-${bird.iucn_status}">${IUCN_LABELS[bird.iucn_status]}</span>
+      <span class="tag">${bird.region.join(', ')}</span>
+      ${bird.habitat.slice(0,3).map(h=>`<span class="tag">${h.replace(/-/g,' ')}</span>`).join('')}
+    </div>
+    ${convergentHtml}
+    ${journalNoteHtml(bird.id)}
+  `;
+  card.classList.add('show');
+  card.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function hideDetail(){
+  document.getElementById('detail-card').classList.remove('show');
+}
+
+/* ════════════════════════════════════════════════════════════
+   JOURNAL / FAVORITES (with export/import)
+   ════════════════════════════════════════════════════════════ */
+function journalNoteHtml(birdId){
+  const note = journal[birdId]?.note || '';
+  return `
+    <div style="margin-top:16px;">
+      <label style="font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;">Your Note</label>
+      <textarea class="journal-textarea" placeholder="What strikes you about this species?" onchange="saveNote(${birdId}, this.value)">${note}</textarea>
+    </div>
+  `;
+}
+function toggleFavorite(birdId){
+  if(!journal[birdId]) journal[birdId] = {};
+  journal[birdId].fav = !journal[birdId].fav;
+  if(!journal[birdId].fav && !journal[birdId].note) delete journal[birdId];
+  persistJournal();
+  const bird = BIRDS_DATA.find(b=>b.id===birdId);
+  if(bird) showDetail(bird);
+  renderJournalLists();
+}
+function saveNote(birdId, text){
+  if(!text && !journal[birdId]?.fav){ delete journal[birdId]; }
+  else {
+    if(!journal[birdId]) journal[birdId] = {};
+    journal[birdId].note = text;
+  }
+  persistJournal();
+  renderJournalLists();
+}
+function persistJournal(){
+  try{ localStorage.setItem('bird_explorer_journal', JSON.stringify(journal)); }catch(e){}
+}
+function loadJournal(){
+  try{
+    const raw = localStorage.getItem('bird_explorer_journal');
+    if(raw) journal = JSON.parse(raw);
+  }catch(e){ journal = {}; }
+}
+function renderJournalLists(){
+  const entries = Object.entries(journal).filter(([id,v])=>v.fav || (v.note && v.note.trim()));
+  const section = document.getElementById('journal-section');
+  const list = document.getElementById('journal-list');
+  const miniList = document.getElementById('journal-mini-list');
+
+  if(entries.length===0){
+    section.style.display='none';
+    miniList.innerHTML = `<p style="font-size:.78rem;color:var(--muted);font-style:italic;text-align:center;">No entries yet — star a species to begin.</p>`;
+    return;
+  }
+  section.style.display='block';
+
+  const html = entries.map(([id,v])=>{
+    const bird = BIRDS_DATA.find(b=>b.id==id);
+    if(!bird) return '';
+    const fam = FAMILY_INFO[bird.family];
+    return `<div class="bird-chip" onclick="jumpToBird(${bird.id})" style="margin-bottom:10px;">
+      <div class="bname"><span class="family-dot" style="background:${fam.color}"></span>${v.fav?'★ ':''}${bird.name}</div>
+      <div class="bsci">${bird.scientific}</div>
+      ${v.note ? `<div style="font-size:.78rem;color:var(--muted2);font-style:italic;margin-top:6px;">"${v.note}"</div>` : ''}
+    </div>`;
+  }).join('');
+  list.innerHTML = `<div class="bird-grid">${html}</div>`;
+  miniList.innerHTML = `<p style="font-size:.78rem;color:var(--muted2);">${entries.length} ${entries.length===1?'entry':'entries'} saved.</p>`;
+}
+function jumpToBird(birdId){
+  const bird = BIRDS_DATA.find(b=>b.id===birdId);
+  if(bird) showDetail(bird);
+  toggleAdmin(false);
+  window.scrollTo({top: document.getElementById('detail-card').offsetTop - 20, behavior:'smooth'});
+}
+
+function toggleAdmin(force){
+  const panel = document.getElementById('admin-panel');
+  if(force===false){ panel.classList.remove('open'); return; }
+  if(force===true){ panel.classList.add('open'); return; }
+  panel.classList.toggle('open');
+}
+
+function exportJournal(){
+  const data = {
+    project: "Bird Strategy Explorer — Field Journal",
+    exported: new Date().toISOString().slice(0,10),
+    by: "Matthew Abraham's Bird Strategy Explorer",
+    entries: journal
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `bird_journal_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  document.getElementById('journal-status').textContent = '✓ Journal exported';
+  setTimeout(()=>document.getElementById('journal-status').textContent='', 2500);
+}
+
+function setupJournalImport(){
+  const area = document.getElementById('import-journal-area');
+  const input = document.getElementById('import-journal-input');
+  area.addEventListener('click', ()=>input.click());
+  input.addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      try{
+        const data = JSON.parse(ev.target.result);
+        if(data.entries){
+          journal = {...journal, ...data.entries};
+          persistJournal();
+          renderJournalLists();
+          document.getElementById('journal-status').textContent = '✓ Journal imported';
+        } else {
+          document.getElementById('journal-status').textContent = '✗ Invalid file format';
+        }
+      }catch(err){
+        document.getElementById('journal-status').textContent = '✗ Could not read file';
+      }
+      setTimeout(()=>document.getElementById('journal-status').textContent='', 2500);
+    };
+    reader.readAsText(file);
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   UTILITIES
+   ════════════════════════════════════════════════════════════ */
+function familyDot(family){
+  return `<span class="family-dot" style="background:${FAMILY_INFO[family].color}"></span>`;
+}
+function birdChipHtml(bird){
+  return `<div class="bird-chip" onclick='showDetailById(${bird.id})'>
+    <div class="bname">${familyDot(bird.family)}${bird.name}</div>
+    <div class="bsci">${bird.scientific}</div>
+    <div class="bmeta">${bird.family} · ${bird.region.slice(0,2).join(', ')}</div>
+  </div>`;
+}
+function showDetailById(id){
+  const bird = BIRDS_DATA.find(b=>b.id===id);
+  if(bird) showDetail(bird);
+}
+function fmtMass(g){ return g<1000 ? g+'g' : (g/1000).toFixed(1)+'kg'; }
+
+/* ════════════════════════════════════════════════════════════
+   GENERIC CANVAS SCATTER PLOT ENGINE
+   ════════════════════════════════════════════════════════════ */
+function setupCanvas(canvas){
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const cssHeight = parseInt(canvas.getAttribute('height')) || 400;
+  canvas.width = rect.width * dpr;
+  canvas.height = cssHeight * dpr;
+  canvas.style.height = cssHeight+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  return { ctx, w: rect.width, h: cssHeight };
+}
+
+function scaleValue(val, min, max, outMin, outMax, log){
+  if(log){
+    const lv = Math.log10(Math.max(val,0.01));
+    const lmin = Math.log10(Math.max(min,0.01));
+    const lmax = Math.log10(Math.max(max,0.01));
+    return outMin + (lv-lmin)/(lmax-lmin) * (outMax-outMin);
+  }
+  return outMin + (val-min)/(max-min) * (outMax-outMin);
+}
+
+function niceTicks(min, max, count, log){
+  if(log){
+    const ticks = [];
+    let p = Math.floor(Math.log10(Math.max(min,0.01)));
+    const pmax = Math.ceil(Math.log10(max));
+    for(let e=p; e<=pmax; e++){
+      ticks.push(Math.pow(10,e));
+    }
+    return ticks;
+  }
+  const range = max-min;
+  const step = range/count;
+  const ticks = [];
+  for(let i=0;i<=count;i++) ticks.push(min + step*i);
+  return ticks;
+}
+
+function fmtTick(v){
+  if(v>=1000) return (v/1000).toFixed(v%1000===0?0:1)+'k';
+  if(v<1 && v>0) return v.toFixed(2);
+  return Math.round(v*10)/10;
+}
+
+/**
+ * Draws a scatter plot.
+ * points: [{x, y, color, label, bird}]
+ * opts: {xMin,xMax,yMin,yMax,xLog,yLog,xLabel,yLabel}
+ * returns array of {px,py,r,bird} for hit-testing
+ */
+function drawScatter(canvas, points, opts){
+  const {ctx, w, h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+
+  const margin = {top:20, right:20, bottom:50, left:60};
+  const plotW = w - margin.left - margin.right;
+  const plotH = h - margin.top - margin.bottom;
+
+  // background
+  ctx.fillStyle = 'rgba(5,24,35,0.3)';
+  ctx.fillRect(0,0,w,h);
+
+  // gridlines + axis ticks
+  ctx.strokeStyle = 'rgba(74,127,165,0.15)';
+  ctx.fillStyle = 'rgba(214,238,248,0.45)';
+  ctx.font = '10px Nunito, sans-serif';
+  ctx.lineWidth = 1;
+
+  const xTicks = niceTicks(opts.xMin, opts.xMax, 5, opts.xLog);
+  const yTicks = niceTicks(opts.yMin, opts.yMax, 5, opts.yLog);
+
+  xTicks.forEach(t=>{
+    const px = margin.left + scaleValue(t, opts.xMin, opts.xMax, 0, plotW, opts.xLog);
+    ctx.beginPath();
+    ctx.moveTo(px, margin.top);
+    ctx.lineTo(px, margin.top+plotH);
+    ctx.stroke();
+    ctx.textAlign='center';
+    ctx.fillText(fmtTick(t), px, margin.top+plotH+18);
+  });
+  yTicks.forEach(t=>{
+    const py = margin.top + plotH - scaleValue(t, opts.yMin, opts.yMax, 0, plotH, opts.yLog);
+    ctx.beginPath();
+    ctx.moveTo(margin.left, py);
+    ctx.lineTo(margin.left+plotW, py);
+    ctx.stroke();
+    ctx.textAlign='right';
+    ctx.fillText(fmtTick(t), margin.left-8, py+3);
+  });
+
+  // axis labels
+  ctx.fillStyle = '#f6c90e';
+  ctx.font = '11px Cinzel, serif';
+  ctx.textAlign='center';
+  ctx.fillText(opts.xLabel, margin.left+plotW/2, h-8);
+  ctx.save();
+  ctx.translate(14, margin.top+plotH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText(opts.yLabel, 0, 0);
+  ctx.restore();
+
+  // points
+  const hitTargets = [];
+  points.forEach(p=>{
+    const px = margin.left + scaleValue(p.x, opts.xMin, opts.xMax, 0, plotW, opts.xLog);
+    const py = margin.top + plotH - scaleValue(p.y, opts.yMin, opts.yMax, 0, plotH, opts.yLog);
+    const r = p.highlighted ? 7 : 4.5;
+    ctx.beginPath();
+    ctx.arc(px,py,r,0,Math.PI*2);
+    ctx.fillStyle = p.color + (p.highlighted?'ff':'cc');
+    ctx.fill();
+    if(p.highlighted){
+      ctx.strokeStyle = '#f6c90e';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    hitTargets.push({px,py,r:8,bird:p.bird});
+  });
+
+  return hitTargets;
+}
+
+function attachHoverClick(canvas, getHitTargets, onHover, onClick){
+  let targets = [];
+  function refresh(){ targets = getHitTargets(); }
+  refresh();
+  canvas.addEventListener('mousemove', (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+    const hit = targets.find(t=>Math.hypot(t.px-mx,t.py-my)<t.r);
+    canvas.style.cursor = hit ? 'pointer' : 'crosshair';
+    if(onHover) onHover(hit ? hit.bird : null, e);
+  });
+  canvas.addEventListener('click', (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+    const hit = targets.find(t=>Math.hypot(t.px-mx,t.py-my)<t.r);
+    if(hit && onClick) onClick(hit.bird);
+  });
+  canvas._refreshHitTargets = refresh;
+}
+
+/* ════════════════════════════════════════════════════════════
+   WISDOM FEED
+   ════════════════════════════════════════════════════════════ */
+let wisdomFamilyFilter = 'all';
+let wisdomShuffleSeed = [];
+
+function initWisdomFeed(){
+  const filterRow = document.getElementById('wisdom-family-filter');
+  const families = ['all', ...Object.keys(FAMILY_INFO)];
+  filterRow.innerHTML = families.map(f=>
+    `<div class="chip ${f===wisdomFamilyFilter?'active':''}" data-fam="${f}">${f==='all'?'All Families':FAMILY_INFO[f].icon+' '+f}</div>`
+  ).join('');
+  filterRow.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      wisdomFamilyFilter = chip.dataset.fam;
+      filterRow.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      shuffleWisdom();
+    });
+  });
+  document.getElementById('shuffle-btn').addEventListener('click', shuffleWisdom);
+  shuffleWisdom();
+}
+
+function shuffleWisdom(){
+  let pool = BIRDS_DATA.slice();
+  if(wisdomFamilyFilter !== 'all') pool = pool.filter(b=>b.family===wisdomFamilyFilter);
+  // shuffle
+  for(let i=pool.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [pool[i],pool[j]] = [pool[j],pool[i]];
+  }
+  wisdomShuffleSeed = pool.slice(0, 12);
+  renderWisdomFeed();
+}
+
+function renderWisdomFeed(){
+  const feed = document.getElementById('wisdom-feed');
+  if(wisdomShuffleSeed.length===0){
+    feed.innerHTML = `<p style="text-align:center;color:var(--muted);font-style:italic;padding:30px;">No species in this family yet.</p>`;
+    return;
+  }
+  feed.innerHTML = wisdomShuffleSeed.map(bird=>{
+    const fam = FAMILY_INFO[bird.family];
+    return `<div class="wisdom-card" onclick="showDetailById(${bird.id})">
+      <div class="wname">${fam.icon} ${bird.name}</div>
+      <div class="wsci">${bird.scientific} · ${bird.family}</div>
+      <div class="wtext">${bird.philosophy}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════
+   MORPHOSPACE EXPLORER
+   ════════════════════════════════════════════════════════════ */
+const MORPH_TRAITS = ['mass_g','wingspan_cm','beak_length_mm','beak_curvature','lifespan_years','clutch_size','heart_rate_bpm','incubation_days','altitude_max'];
+
+function initMorphospace(){
+  const xSel = document.getElementById('morph-x');
+  const ySel = document.getElementById('morph-y');
+  MORPH_TRAITS.forEach(t=>{
+    xSel.innerHTML += `<option value="${t}">${TRAIT_LABELS[t]}</option>`;
+    ySel.innerHTML += `<option value="${t}">${TRAIT_LABELS[t]}</option>`;
+  });
+  xSel.value = 'mass_g';
+  ySel.value = 'beak_length_mm';
+
+  [xSel, ySel, document.getElementById('morph-color'), document.getElementById('morph-scale')]
+    .forEach(el=>el.addEventListener('change', drawMorphospace));
+
+  window.addEventListener('resize', debounce(()=>{
+    const activeMode = document.querySelector('.mode-tab.active').dataset.mode;
+    if(activeMode==='morphospace') drawMorphospace();
+    if(activeMode==='lifehistory') drawLifeHistory();
+    if(activeMode==='anatomy') drawAnatomy();
+    if(activeMode==='conservation') drawConservation();
+  }, 200));
+}
+
+function debounce(fn, ms){
+  let t;
+  return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); };
+}
+
+function drawMorphospace(){
+  const canvas = document.getElementById('morph-canvas');
+  if(!canvas.offsetParent) return; // hidden
+  const xField = document.getElementById('morph-x').value;
+  const yField = document.getElementById('morph-y').value;
+  const colorField = document.getElementById('morph-color').value;
+  const useLog = document.getElementById('morph-scale').value === 'log';
+
+  const xVals = BIRDS_DATA.map(b=>b[xField]).filter(v=>v>0);
+  const yVals = BIRDS_DATA.map(b=>b[yField]).filter(v=>v>0);
+  const xMin = Math.min(...xVals), xMax = Math.max(...xVals);
+  const yMin = Math.min(...yVals), yMax = Math.max(...yVals);
+
+  const points = BIRDS_DATA.filter(b=>b[xField]>0 && b[yField]>0).map(b=>{
+    let color;
+    if(colorField==='family') color = COLORS.family[b.family];
+    else if(colorField==='diet') color = COLORS.diet[b.diet] || '#999';
+    else if(colorField==='migration') color = COLORS.migration[b.migration] || '#999';
+    else if(colorField==='iucn_status') color = COLORS.iucn_status[b.iucn_status] || '#999';
+    return { x:b[xField], y:b[yField], color, bird:b };
+  });
+
+  const xLog = useLog && xField==='mass_g';
+  const yLog = useLog && (yField==='mass_g'||yField==='heart_rate_bpm'||yField==='clutch_size');
+
+  canvas._lastTargets = drawScatter(canvas, points, {
+    xMin: xLog ? Math.max(xMin*0.8,0.5) : xMin*0.9,
+    xMax: xMax*1.1,
+    yMin: yLog ? Math.max(yMin*0.8,0.5) : Math.min(yMin*0.9,0),
+    yMax: yMax*1.1,
+    xLog, yLog,
+    xLabel: TRAIT_LABELS[xField] + (xLog?' (log)':''),
+    yLabel: TRAIT_LABELS[yField] + (yLog?' (log)':'')
+  });
+
+  if(!canvas._listenersAttached){
+    attachHoverClick(canvas,
+      ()=> canvas._lastTargets || [],
+      null,
+      (bird)=>{ if(bird) showDetail(bird); }
+    );
+    canvas._listenersAttached = true;
+  }
+
+  // legend
+  const legend = document.getElementById('morph-legend');
+  let legendItems;
+  if(colorField==='family') legendItems = Object.entries(COLORS.family);
+  else if(colorField==='diet') legendItems = Object.entries(COLORS.diet);
+  else if(colorField==='migration') legendItems = Object.entries(COLORS.migration);
+  else legendItems = Object.entries(COLORS.iucn_status).map(([k,v])=>[IUCN_LABELS[k],v]);
+  legend.innerHTML = legendItems.map(([label,color])=>
+    `<div class="chip" style="border-color:${color}66;color:${color};">● ${label.replace(/_/g,' ')}</div>`
+  ).join('');
+}
+
+/* ════════════════════════════════════════════════════════════
+   LIFE HISTORY STRATEGY SPACE
+   ════════════════════════════════════════════════════════════ */
+function initLifeHistory(){
+  const familySel = document.getElementById('lh-family');
+  familySel.innerHTML = '<option value="all">All Families</option>' +
+    Object.keys(FAMILY_INFO).map(f=>`<option value="${f}">${FAMILY_INFO[f].icon} ${f}</option>`).join('');
+  document.getElementById('lh-y').addEventListener('change', drawLifeHistory);
+  familySel.addEventListener('change', drawLifeHistory);
+}
+
+function drawLifeHistory(){
+  const canvas = document.getElementById('lh-canvas');
+  if(!canvas.offsetParent) return;
+  const yField = document.getElementById('lh-y').value;
+  const familyFilter = document.getElementById('lh-family').value;
+
+  let data = BIRDS_DATA.filter(b=>b.lifespan_years>0 && b[yField]>0);
+  if(familyFilter !== 'all') data = data.filter(b=>b.family===familyFilter);
+
+  const xVals = data.map(b=>b.lifespan_years);
+  const yVals = data.map(b=>b[yField]);
+  const xMin = Math.min(...xVals), xMax = Math.max(...xVals);
+  const yMin = Math.min(...yVals), yMax = Math.max(...yVals);
+
+  const yLog = yField==='heart_rate_bpm';
+
+  const points = data.map(b=>({
+    x: b.lifespan_years, y: b[yField],
+    color: COLORS.family[b.family],
+    bird: b
+  }));
+
+  canvas._lastTargets = drawScatter(canvas, points, {
+    xMin: 1, xMax: xMax*1.1,
+    yMin: yLog ? yMin*0.8 : Math.min(yMin*0.9,0),
+    yMax: yMax*1.1,
+    xLog: true, yLog,
+    xLabel: 'Lifespan (years, log)',
+    yLabel: TRAIT_LABELS[yField]
+  });
+
+  if(!canvas._listenersAttached){
+    attachHoverClick(canvas, ()=>canvas._lastTargets||[], null, (bird)=>{ if(bird) showDetail(bird); });
+    canvas._listenersAttached = true;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   DIET & ANATOMY
+   ════════════════════════════════════════════════════════════ */
+let anatomyDietFilter = new Set(Object.keys(COLORS.diet));
+
+function initAnatomy(){
+  const filterRow = document.getElementById('diet-filter');
+  const diets = Object.keys(COLORS.diet).filter(d=> BIRDS_DATA.some(b=>b.diet===d));
+  filterRow.innerHTML = diets.map(d=>
+    `<div class="chip active" data-diet="${d}" style="border-color:${COLORS.diet[d]}66;color:${COLORS.diet[d]};">● ${d.replace(/_/g,' ')}</div>`
+  ).join('');
+  filterRow.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const d = chip.dataset.diet;
+      if(anatomyDietFilter.has(d)){ anatomyDietFilter.delete(d); chip.classList.remove('active'); }
+      else { anatomyDietFilter.add(d); chip.classList.add('active'); }
+      drawAnatomy();
+    });
+  });
+}
+
+function drawAnatomy(){
+  const canvas = document.getElementById('anatomy-canvas');
+  if(!canvas.offsetParent) return;
+
+  let data = BIRDS_DATA.filter(b=>anatomyDietFilter.has(b.diet) && b.beak_length_mm>0);
+
+  const xVals = data.map(b=>b.beak_length_mm);
+  const xMin = Math.min(...xVals), xMax = Math.max(...xVals);
+
+  const points = data.map(b=>({
+    x: b.beak_length_mm, y: b.beak_curvature,
+    color: COLORS.diet[b.diet] || '#999',
+    bird: b
+  }));
+
+  canvas._lastTargets = drawScatter(canvas, points, {
+    xMin: xMin*0.85, xMax: xMax*1.1,
+    yMin: -3.2, yMax: 5.3,
+    xLog: true, yLog: false,
+    xLabel: 'Beak Length (mm, log)',
+    yLabel: 'Beak Curvature (− = upcurved, + = hooked/curved)'
+  });
+
+  if(!canvas._listenersAttached){
+    attachHoverClick(canvas, ()=>canvas._lastTargets||[], null, (bird)=>{
+      if(bird){
+        showDetail(bird);
+        if(bird.convergent_with && bird.convergent_with.length){
+          const callout = document.getElementById('convergence-callout');
+          callout.style.display='block';
+          callout.innerHTML = `<h2>🔗 Convergent Evolution</h2>
+            <p><b style="color:var(--gold2)">${bird.name}</b> shares its beak shape and feeding
+            strategy with <b style="color:var(--gold2)">${bird.convergent_with.join(', ')}</b> —
+            despite vast evolutionary distance between these lineages. Same problem, same answer,
+            invented independently.</p>`;
+        }
+      }
+    });
+    canvas._listenersAttached = true;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   GEOGRAPHY
+   ════════════════════════════════════════════════════════════ */
+function initGeography(){
+  const regionSel = document.getElementById('geo-region');
+  const allRegions = new Set();
+  BIRDS_DATA.forEach(b=>b.region.forEach(r=>allRegions.add(r)));
+  regionSel.innerHTML = '<option value="all">All Regions</option>' +
+    [...allRegions].sort().map(r=>`<option value="${r}">${r}</option>`).join('');
+
+  [regionSel, document.getElementById('geo-alt-min'), document.getElementById('geo-migration')]
+    .forEach(el=>el.addEventListener('change', renderGeography));
+
+  renderGeography();
+}
+
+function renderGeography(){
+  const region = document.getElementById('geo-region').value;
+  const altMin = parseInt(document.getElementById('geo-alt-min').value);
+  const migration = document.getElementById('geo-migration').value;
+
+  let data = BIRDS_DATA.filter(b=>{
+    if(region!=='all' && !b.region.includes(region)) return false;
+    if(b.altitude_max < altMin) return false;
+    if(migration!=='all' && b.migration!==migration) return false;
+    return true;
+  });
+
+  const results = document.getElementById('geo-results');
+  if(data.length===0){
+    results.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:var(--muted);font-style:italic;padding:30px;">No species match these filters — an empty corner of the map.</p>`;
+  } else {
+    results.innerHTML = data.map(birdChipHtml).join('');
+  }
+
+  // summary text
+  const summary = document.getElementById('geo-summary');
+  const familiesPresent = [...new Set(data.map(b=>b.family))];
+  let text = `<h2>${data.length} species match</h2>`;
+  if(data.length>0){
+    text += `<p>Families represented: ${familiesPresent.map(f=>FAMILY_INFO[f].icon+' '+f).join(', ')}.</p>`;
+    if(altMin>=3000){
+      text += `<p class="question">High-altitude life demands extra red blood cells, larger lungs or
+        air sacs, and — in hummingbirds — nightly torpor just to survive the cold. Notice how few
+        families appear above 3,000m.</p>`;
+    }
+    if(region==='Australia'){
+      text += `<p class="question">Australia's long isolation produced unique radiations — fairywrens,
+        lyrebirds, cockatoos — while missing entire families common elsewhere (no native hummingbirds,
+        no woodpeckers). Isolation is a sculptor as much as a barrier.</p>`;
+    }
+  }
+  summary.innerHTML = text;
+}
+
+/* ════════════════════════════════════════════════════════════
+   CONSERVATION
+   ════════════════════════════════════════════════════════════ */
+let iucnFilter = new Set(['LC','NT','VU','EN','CR']);
+
+function initConservation(){
+  const filterRow = document.getElementById('iucn-filter');
+  filterRow.innerHTML = Object.keys(IUCN_LABELS).map(s=>
+    `<div class="chip active" data-iucn="${s}" style="border-color:${COLORS.iucn_status[s]}66;color:${COLORS.iucn_status[s]};">● ${IUCN_LABELS[s]}</div>`
+  ).join('');
+  filterRow.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const s = chip.dataset.iucn;
+      if(iucnFilter.has(s)){ iucnFilter.delete(s); chip.classList.remove('active'); }
+      else { iucnFilter.add(s); chip.classList.add('active'); }
+      drawConservation();
+    });
+  });
+}
+
+function drawConservation(){
+  const canvas = document.getElementById('conservation-canvas');
+  if(!canvas.offsetParent) return;
+  const {ctx,w,h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+
+  const counts = {};
+  Object.keys(IUCN_LABELS).forEach(s=>counts[s]=0);
+  BIRDS_DATA.forEach(b=>{ if(iucnFilter.has(b.iucn_status)) counts[b.iucn_status]++; });
+
+  const margin = {top:30,right:20,bottom:60,left:40};
+  const plotW = w-margin.left-margin.right;
+  const plotH = h-margin.top-margin.bottom;
+  const maxCount = Math.max(...Object.values(counts), 1);
+  const statuses = Object.keys(IUCN_LABELS);
+  const barW = plotW/statuses.length * 0.6;
+  const gap = plotW/statuses.length;
+
+  ctx.fillStyle='rgba(5,24,35,0.3)';
+  ctx.fillRect(0,0,w,h);
+
+  statuses.forEach((s,i)=>{
+    const barH = (counts[s]/maxCount) * plotH;
+    const x = margin.left + i*gap + (gap-barW)/2;
+    const y = margin.top + plotH - barH;
+    ctx.fillStyle = iucnFilter.has(s) ? COLORS.iucn_status[s] : 'rgba(100,100,100,0.2)';
+    ctx.fillRect(x,y,barW,barH);
+    ctx.fillStyle='#d6eef8';
+    ctx.font='13px Cinzel, serif';
+    ctx.textAlign='center';
+    ctx.fillText(counts[s], x+barW/2, y-8);
+    ctx.font='10px Nunito, sans-serif';
+    ctx.fillStyle='rgba(214,238,248,0.6)';
+    const label = IUCN_LABELS[s];
+    const words = label.split(' ');
+    ctx.fillText(words[0], x+barW/2, margin.top+plotH+18);
+    if(words[1]) ctx.fillText(words[1], x+barW/2, margin.top+plotH+32);
+  });
+
+  // threat groups
+  renderThreatGroups();
+}
+
+function renderThreatGroups(){
+  const container = document.getElementById('threat-groups');
+  let data = BIRDS_DATA.filter(b=>iucnFilter.has(b.iucn_status));
+
+  // aggregate threats
+  const threatMap = {};
+  data.forEach(b=>{
+    (b.threats||[]).forEach(t=>{
+      if(!threatMap[t]) threatMap[t]=[];
+      threatMap[t].push(b);
+    });
+  });
+  const sortedThreats = Object.entries(threatMap).sort((a,b)=>b[1].length-a[1].length);
+
+  if(sortedThreats.length===0){
+    container.innerHTML = `<p style="text-align:center;color:var(--muted);font-style:italic;padding:20px;">No threats recorded for the selected statuses.</p>`;
+    return;
+  }
+
+  let html = `<div class="mode-intro"><h2>Shared Threats</h2>
+    <p>The same root causes echo across unrelated species and continents. Click a threat
+    to see who shares it.</p></div>`;
+
+  html += sortedThreats.slice(0,8).map(([threat, birds])=>{
+    const label = threat.replace(/_/g,' ');
+    return `<div class="bird-chip" style="margin-bottom:10px;cursor:default;">
+      <div class="bname">⚠️ ${label} <span style="color:var(--sb);font-family:'Nunito',sans-serif;font-weight:700;">(${birds.length} species)</span></div>
+      <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">
+        ${birds.map(b=>`<span class="tag" style="cursor:pointer;" onclick="showDetailById(${b.id})">${b.name}</span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════════════════
+   COMPARE
+   ════════════════════════════════════════════════════════════ */
+function initCompare(){
+  const sorted = BIRDS_DATA.slice().sort((a,b)=>a.name.localeCompare(b.name));
+  ['compare-1','compare-2','compare-3'].forEach(id=>{
+    const sel = document.getElementById(id);
+    sorted.forEach(b=>{
+      sel.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+    });
+    sel.addEventListener('change', renderCompare);
+  });
+  document.getElementById('compare-random').addEventListener('click', ()=>{
+    const a = BIRDS_DATA[Math.floor(Math.random()*BIRDS_DATA.length)];
+    let b;
+    do { b = BIRDS_DATA[Math.floor(Math.random()*BIRDS_DATA.length)]; } while(b.id===a.id);
+    document.getElementById('compare-1').value = a.id;
+    document.getElementById('compare-2').value = b.id;
+    document.getElementById('compare-3').value = '';
+    renderCompare();
+  });
+}
+
+const COMPARE_METRICS = [
+  {key:'family', label:'Family'},
+  {key:'mass_g', label:'Mass', fmt:fmtMass},
+  {key:'wingspan_cm', label:'Wingspan', fmt:v=>v>0?v+' cm':'—'},
+  {key:'beak_length_mm', label:'Beak Length', fmt:v=>v+' mm'},
+  {key:'beak_curvature', label:'Beak Curvature', fmt:v=>v},
+  {key:'diet', label:'Diet', fmt:v=>v.replace(/_/g,' ')},
+  {key:'habitat', label:'Habitat', fmt:v=>v.join(', ')},
+  {key:'region', label:'Region', fmt:v=>v.join(', ')},
+  {key:'migration', label:'Migration', fmt:v=>v.replace(/_/g,' ')},
+  {key:'lifespan_years', label:'Lifespan', fmt:v=>v+' years'},
+  {key:'clutch_size', label:'Clutch Size', fmt:v=>v},
+  {key:'eggs_per_year', label:'Eggs / Year', fmt:v=>v},
+  {key:'incubation_days', label:'Incubation', fmt:v=>v+' days'},
+  {key:'heart_rate_bpm', label:'Heart Rate', fmt:v=>v+' bpm'},
+  {key:'iucn_status', label:'Conservation', fmt:v=>IUCN_LABELS[v]},
+];
+
+function renderCompare(){
+  const ids = ['compare-1','compare-2','compare-3']
+    .map(id=>document.getElementById(id).value)
+    .filter(v=>v!=='');
+  const output = document.getElementById('compare-output');
+
+  if(ids.length<2){
+    output.innerHTML = `<div class="compare-empty">Choose at least two species to compare.</div>`;
+    return;
+  }
+
+  const birds = ids.map(id=>BIRDS_DATA.find(b=>b.id==id));
+
+  let html = `<div class="plot-wrap" style="overflow-x:auto;"><table class="compare-table"><thead><tr><th>Trait</th>`;
+  birds.forEach(b=>{ html += `<th>${b.name}</th>`; });
+  html += `</tr></thead><tbody>`;
+  COMPARE_METRICS.forEach(m=>{
+    html += `<tr><td class="metric-label">${m.label}</td>`;
+    birds.forEach(b=>{
+      const raw = b[m.key];
+      const val = m.fmt ? m.fmt(raw) : raw;
+      html += `<td>${val}</td>`;
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table></div>`;
+
+  // philosophy excerpts
+  html += `<div class="bird-grid">` + birds.map(b=>{
+    const fam = FAMILY_INFO[b.family];
+    return `<div class="wisdom-card" onclick="showDetailById(${b.id})">
+      <div class="wname">${fam.icon} ${b.name}</div>
+      <div class="wsci">${b.scientific}</div>
+      <div class="wtext">${b.philosophy}</div>
+    </div>`;
+  }).join('') + `</div>`;
+
+  output.innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════════════════
+   FAMILIES
+   ════════════════════════════════════════════════════════════ */
+function initFamilies(){
+  const grid = document.getElementById('family-grid');
+  grid.innerHTML = Object.entries(FAMILY_INFO).map(([name,info])=>{
+    const count = BIRDS_DATA.filter(b=>b.family===name).length;
+    return `<div class="family-card" style="border-color:${info.color}44;" onclick="showFamilyMembers('${name}')">
+      <div class="ficon">${info.icon}</div>
+      <h3 style="color:${info.color};">${name}</h3>
+      <p>${info.desc}</p>
+      <div class="fcount">${count} species</div>
+    </div>`;
+  }).join('');
+}
+
+function showFamilyMembers(familyName){
+  const members = BIRDS_DATA.filter(b=>b.family===familyName).sort((a,b)=>a.name.localeCompare(b.name));
+  const container = document.getElementById('family-members');
+  container.innerHTML = `<div class="mode-intro" style="grid-column:1/-1;"><h2>${FAMILY_INFO[familyName].icon} ${familyName} (${members.length})</h2></div>` +
+    members.map(birdChipHtml).join('');
+  container.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+/* ════════════════════════════════════════════════════════════
+   BOOTSTRAP
+   ════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', ()=>{
+  spawnBgBubbles();
+  loadJournal();
+  initModeTabs();
+  initWisdomFeed();
+  initMorphospace();
+  initLifeHistory();
+  initAnatomy();
+  initGeography();
+  initConservation();
+  initCompare();
+  initFamilies();
+  setupJournalImport();
+  renderJournalLists();
+
+  // initial draws (wisdom is active by default, but draw morphospace once visible)
+  requestAnimationFrame(()=>{
+    drawMorphospace();
+  });
+});
+
+</script>
+</body>
+</html>
